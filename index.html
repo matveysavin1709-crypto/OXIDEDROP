@@ -38,7 +38,6 @@
             --font-body: 'Nunito', sans-serif;
         }
 
-        /* ИСПРАВЛЕНИЕ ФОНА: body делаем прозрачным, чтобы видеть слои под ним */
         html, body {
             margin: 0; padding: 0;
             background-color: transparent; 
@@ -57,16 +56,44 @@
             margin: 0;
         }
 
+        /* --- ПРЕЛОАДЕР (ЭКРАН ЗАГРУЗКИ) --- */
+        #preloader {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: var(--bg-base); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .preloader-logo {
+            width: 100px; height: 100px; object-fit: contain; margin-bottom: 30px;
+            filter: drop-shadow(0 0 20px var(--brand-primary));
+            animation: pulseIcon 1.5s infinite alternate;
+        }
+        .preloader-bar-container {
+            width: 70%; max-width: 300px; height: 8px;
+            background: rgba(255,255,255,0.1); border-radius: 10px;
+            border: 1px solid var(--blue-glass-border); overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .preloader-bar-fill {
+            height: 100%; width: 0%; border-radius: 10px;
+            background: var(--brand-primary);
+            box-shadow: 0 0 15px var(--brand-primary);
+            transition: width 0.1s linear;
+        }
+        .preloader-text {
+            margin-top: 15px; font-family: var(--font-display); font-size: 16px;
+            color: var(--brand-primary); font-weight: 900;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.6);
+        }
+
         /* --- ЖИВОЙ СОВРЕМЕННЫЙ ФОН --- */
         .modern-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: var(--bg-base); /* Цвет фона перенесен сюда */
-            z-index: -3; overflow: hidden;
+            background-color: var(--bg-base); z-index: -3; overflow: hidden;
         }
         .blob {
             position: absolute; filter: blur(90px); opacity: 0.5;
-            border-radius: 50%;
-            animation: floatBlob 15s infinite alternate ease-in-out;
+            border-radius: 50%; animation: floatBlob 15s infinite alternate ease-in-out;
         }
         .blob-1 { top: -10%; left: -10%; width: 400px; height: 400px; background: var(--brand-secondary); }
         .blob-2 { bottom: -10%; right: -20%; width: 500px; height: 500px; background: #005f9e; animation-delay: -5s; }
@@ -83,8 +110,7 @@
             background-image: 
                 linear-gradient(rgba(0, 210, 255, 0.1) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 210, 255, 0.1) 1px, transparent 1px);
-            background-size: 45px 45px;
-            z-index: -2;
+            background-size: 45px 45px; z-index: -2;
             transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
             animation: gridMove 4s linear infinite;
             mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
@@ -104,29 +130,21 @@
 
         /* Эффекты Glassmorphism */
         .glass-panel {
-            background: var(--blue-glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--blue-glass-border);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.05);
-            overflow: hidden; 
+            background: var(--blue-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--blue-glass-border); border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.05); overflow: hidden; 
         }
 
         .coin-icon { width: 1.2em; height: 1.2em; vertical-align: -0.2em; margin-left: 3px; }
-        
         .item-img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
         .case-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.6)); transition: transform 0.3s; }
         .drop-item-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
         /* Верхняя панель */
         .top-bar {
-            position: fixed; top: 0; left: 0; width: 100%; height: 65px;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; z-index: 100;
-            background: rgba(6, 11, 20, 0.8); backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--blue-glass-border);
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            position: fixed; top: 0; left: 0; width: 100%; height: 65px; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; z-index: 100; background: rgba(6, 11, 20, 0.8); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--blue-glass-border); box-shadow: 0 5px 25px rgba(0,0,0,0.5);
         }
         .top-bar-left { display: flex; align-items: center; gap: 12px; }
         .top-bar-left img { height: 30px; border-radius: 8px; filter: drop-shadow(0 0 10px var(--blue-glow));}
@@ -134,9 +152,8 @@
         
         .balance-chip {
             background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3);
-            padding: 8px 16px; border-radius: 14px; font-weight: 900; color: var(--coin);
-            display: flex; align-items: center; gap: 4px; box-shadow: 0 0 15px rgba(255, 204, 0, 0.15);
-            transition: transform 0.2s; font-family: var(--font-display); font-size: 15px;
+            padding: 8px 16px; border-radius: 14px; font-weight: 900; color: var(--coin); display: flex; align-items: center; gap: 4px;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.15); transition: transform 0.2s; font-family: var(--font-display); font-size: 15px;
         }
 
         .main-container { padding: 85px 15px 100px 15px; }
@@ -144,7 +161,7 @@
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* УВЕЛИЧЕННАЯ Сетка кейсов */
+        /* Сетка кейсов */
         .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .case-card { display: flex; flex-direction: column; align-items: center; padding: 25px 10px; text-align: center; position: relative; cursor: pointer; }
         .case-img-placeholder { width: 110px; height: 110px; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; font-size: 55px; }
@@ -153,20 +170,13 @@
         
         /* Кнопки */
         .btn {
-            width: 100%; padding: 14px 10px; border: none; border-radius: 12px;
-            background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary));
-            color: white; font-size: 15px; font-weight: 900; cursor: pointer;
-            box-shadow: 0 6px 20px var(--blue-glow); transition: all 0.2s;
+            width: 100%; padding: 14px 10px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary));
+            color: white; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 6px 20px var(--blue-glow); transition: all 0.2s;
             text-shadow: 0 2px 5px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px;
         }
         .btn:active { transform: scale(0.95); box-shadow: 0 2px 10px var(--blue-glow); }
         .btn:disabled { background: #2a3441; box-shadow: none; color: #5c6b7d; text-shadow: none; pointer-events: none; }
-        
-        .btn-sell { 
-            background: rgba(46, 213, 115, 0.15); border: 1px solid rgba(46, 213, 115, 0.4); 
-            color: var(--success); box-shadow: none; margin-top: 10px; font-size: 13px; 
-            padding: 8px; font-family: var(--font-body); font-weight: 800; text-shadow: none; flex-direction: row; 
-        }
+        .btn-sell { background: rgba(46, 213, 115, 0.15); border: 1px solid rgba(46, 213, 115, 0.4); color: var(--success); box-shadow: none; margin-top: 10px; font-size: 13px; padding: 8px; font-family: var(--font-body); font-weight: 800; text-shadow: none; flex-direction: row; }
 
         /* Управление открытием */
         .fast-open-controls { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; width: 100%; }
@@ -203,12 +213,9 @@
         .clicker-wrapper { position: relative; width: 220px; height: 220px; margin: 30px 0; display: flex; justify-content: center; align-items: center; }
         .clicker-glow { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0, 210, 255, 0.5) 0%, transparent 70%); animation: pulseClicker 2s infinite alternate; z-index: 0; }
         @keyframes pulseClicker { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 1; } }
-        
         #main-clicker { width: 100%; height: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)); transition: transform 0.05s ease-out; cursor: pointer; pointer-events: auto; -webkit-user-drag: none; }
-        
         .floating-number { position: fixed; color: #ffcc00; font-family: var(--font-display); font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 1000; text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 15px rgba(255, 204, 0, 0.6); }
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-70px) scale(1.3); } }
-
         .energy-bar-container { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid var(--blue-glass-border); border-radius: 12px; height: 18px; margin-top: auto; overflow: hidden; position: relative; }
         .energy-bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12); height: 100%; width: 100%; border-radius: 12px; transition: width 0.2s; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
 
@@ -246,6 +253,15 @@
 </head>
 <body>
 
+    <!-- ЭКРАН ЗАГРУЗКИ -->
+    <div id="preloader">
+        <img src="https://playoxide.com/media/oxide-brand.png" class="preloader-logo" alt="Загрузка..." onerror="this.onerror=null;this.src='';">
+        <div class="preloader-bar-container">
+            <div class="preloader-bar-fill" id="preloader-fill"></div>
+        </div>
+        <div class="preloader-text" id="preloader-text">0%</div>
+    </div>
+
     <!-- Живой 3D Фон без багов (Градиент + Кибер сетка) -->
     <div class="modern-bg">
         <div class="blob blob-1"></div>
@@ -258,29 +274,28 @@
     <!-- Верхняя панель баланса -->
     <div class="top-bar">
         <div class="top-bar-left">
-            <img src="https://playoxide.com/media/oxide-brand.png" alt="Logo">
+            <img src="https://playoxide.com/media/oxide-brand.png" alt="Logo" onerror="this.onerror=null;this.style.display='none';">
             <span>Oxide Drop</span>
         </div>
         <div class="balance-chip" id="global-balance">
-            <span id="balance-val">15000</span> <img src="money/монеты.png" class="coin-icon" alt="монеты">
+            <span id="balance-val">15000</span> <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
         </div>
     </div>
 
     <div class="main-container">
-        
         <!-- ГЛАВНАЯ (Кейсы) -->
         <div id="main-sec" class="section active">
             <div id="cases-list" class="cases-grid">
                 <div class="case-card glass-panel" style="border-color: rgba(255, 204, 0, 0.4); box-shadow: 0 10px 30px rgba(255, 204, 0, 0.1);" onclick="openRouletteView('donat')">
-                    <div class="case-img-placeholder"><img src="DonatCase/кейс.png" class="case-img" alt="Донат Кейс"></div>
+                    <div class="case-img-placeholder"><img src="DonatCase/кейс.png" class="case-img" alt="Донат Кейс" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div>
                     <h3 style="color: #ffcc00;">Донат Кейс</h3>
-                    <button class="btn" style="background: linear-gradient(135deg, #b8860b, #ffcc00); color: #000; text-shadow: none;">399 <img src="money/монеты.png" class="coin-icon" alt="монеты"></button>
+                    <button class="btn" style="background: linear-gradient(135deg, #b8860b, #ffcc00); color: #000; text-shadow: none;">399 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                 </div>
                 
                 <div class="case-card glass-panel" style="border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.15);" onclick="openRouletteView('weapon')">
-                    <div class="case-img-placeholder"><img src="GunCase/оружейный кейс.png" class="case-img" alt="Оружейный Кейс"></div>
+                    <div class="case-img-placeholder"><img src="GunCase/оружейный кейс.png" class="case-img" alt="Оружейный Кейс" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div>
                     <h3 style="color: #ff7675;">Оружейный</h3>
-                    <button class="btn" style="background: linear-gradient(135deg, #b22222, #ff4757); box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);">199 <img src="money/монеты.png" class="coin-icon" alt="монеты"></button>
+                    <button class="btn" style="background: linear-gradient(135deg, #b22222, #ff4757); box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);">199 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                 </div>
             </div>
 
@@ -324,13 +339,12 @@
                 <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Добывай монеты за клики</p>
                 
                 <div style="font-size: 36px; font-weight: 900; margin: 25px 0; font-family: var(--font-display); display: flex; align-items: center; justify-content: center; text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);">
-                    <span id="clicker-balance">15000</span> <img src="money/монеты.png" class="coin-icon" style="width: 1em; height: 1em;" alt="монеты">
+                    <span id="clicker-balance">15000</span> <img src="Money/монеты.png" class="coin-icon" style="width: 1em; height: 1em;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                 </div>
 
                 <div class="clicker-wrapper">
                     <div class="clicker-glow"></div>
-                    <!-- Картинка кликера -->
-                    <img src="clicer/кликер.png" id="main-clicker" alt="Clicker" onpointerdown="handleTap(event)">
+                    <img src="Clicer/кликер.png" id="main-clicker" alt="Clicker" onpointerdown="handleTap(event)" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                 </div>
 
                 <div style="width: 100%; margin-top: auto;">
@@ -348,20 +362,19 @@
 
         <!-- КВЕСТЫ И РЕФЕРАЛКА -->
         <div id="tasks-sec" class="section">
-            <h2 style="margin-top:0; color: var(--brand-primary);">Задания</h2>
+            <h2 style="margin-top:0; color: var(--brand-primary); margin-bottom: 15px;">ЗАДАНИЯ И ДРУЗЬЯ</h2>
             
-            <div class="glass-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="glass-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div>
                     <h4 style="margin: 0 0 8px 0; font-size: 16px;">Подписка в TG</h4>
-                    <span style="color:var(--coin); font-size: 15px; font-family: var(--font-display); font-weight: 900; display:flex; align-items:center;">+ 300 <img src="money/монеты.png" class="coin-icon" alt="монеты"></span>
+                    <span style="color:var(--coin); font-size: 15px; font-family: var(--font-display); font-weight: 900; display:flex; align-items:center;">+ 300 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span>
                 </div>
                 <button class="btn" style="width: auto; padding: 12px 20px; font-size: 14px; flex-direction: row;" onclick="window.Telegram.WebApp.openTelegramLink('https://t.me/OxideDrop')">ВЫПОЛНИТЬ</button>
             </div>
             
-            <!-- Реферальная система перенесена сюда -->
             <div class="glass-panel" style="padding: 20px; margin-bottom: 25px;">
                 <h3 style="margin: 0 0 10px 0; font-size: 18px; color: var(--brand-primary);">ПРИГЛАСИ ДРУГА</h3>
-                <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.4;">Вы получите <span style="color: var(--coin); font-family: var(--font-display); font-weight: 900;">+100 <img src="money/монеты.png" class="coin-icon" alt="монеты"></span> на баланс за каждого.</p>
+                <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.4;">Вы получите <span style="color: var(--coin); font-family: var(--font-display); font-weight: 900;">+100 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span> на баланс за каждого друга.</p>
                 <div class="ref-box">
                     <input type="text" id="ref-link" class="ref-input" readonly value="https://t.me/bot?start=ref_123">
                     <button class="btn" id="copy-btn" style="width: auto; padding: 0 20px; font-size: 13px; flex-direction: row;" onclick="copyRef()">КОПИЯ</button>
@@ -398,7 +411,6 @@
             Кейсы
         </div>
         <div class="nav-item" onclick="switchTab('earn-sec', this)">
-            <!-- Иконка молнии (Заработок) -->
             <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
             Кликер
         </div>
@@ -422,12 +434,12 @@
                 <div id="single-drop-view">
                     <div id="modal-icon-container"></div>
                     <div class="modal-item-name" id="modal-name">Предмет</div>
-                    <div class="modal-item-price" id="modal-price">Стоимость: 0 <img src="money/монеты.png" class="coin-icon" alt="монеты"></div>
+                    <div class="modal-item-price" id="modal-price">Стоимость: 0 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div>
                 </div>
                 
                 <div id="multi-drop-view" style="display: none;">
                     <div class="multi-drop-grid" id="multi-drop-container"></div>
-                    <div class="modal-item-price" id="multi-total-price" style="margin-top: 10px; margin-bottom: 15px;">Общая стоимость: 0 <img src="money/монеты.png" class="coin-icon" alt="монеты"></div>
+                    <div class="modal-item-price" id="multi-total-price" style="margin-top: 10px; margin-bottom: 15px;">Общая стоимость: 0 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div>
                 </div>
             </div>
             
@@ -436,6 +448,61 @@
     </div>
 
     <script>
+        // --- ЛОГИКА ПРЕЛОАДЕРА И КЭШИРОВАНИЯ ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const imagesToLoad = [
+                'https://playoxide.com/media/oxide-brand.png',
+                'Clicer/кликер.png',
+                'DonatCase/багги.png',
+                'DonatCase/карьер.png',
+                'DonatCase/кейс.png',
+                'DonatCase/коптер.png',
+                'DonatCase/турель.png',
+                'GunCase/берданка.png',
+                'GunCase/винтовка.png',
+                'GunCase/калаш.png',
+                'GunCase/оружейный кейс.png',
+                'GunCase/томпсон.png',
+                'Money/монеты.png'
+            ];
+
+            let loadedCount = 0;
+            const totalImages = imagesToLoad.length;
+            const progressFill = document.getElementById('preloader-fill');
+            const progressText = document.getElementById('preloader-text');
+            const preloader = document.getElementById('preloader');
+
+            function finishPreloader() {
+                preloader.style.opacity = '0';
+                preloader.style.visibility = 'hidden';
+                setTimeout(() => { preloader.style.display = 'none'; }, 500);
+            }
+
+            if(totalImages === 0) {
+                finishPreloader();
+                return;
+            }
+
+            imagesToLoad.forEach(src => {
+                const img = new Image();
+                img.onload = updateProgress;
+                img.onerror = updateProgress; 
+                img.src = src;
+            });
+
+            function updateProgress() {
+                loadedCount++;
+                const percent = Math.round((loadedCount / totalImages) * 100);
+                progressFill.style.width = percent + '%';
+                progressText.innerText = percent + '%';
+                
+                if (loadedCount === totalImages) {
+                    setTimeout(finishPreloader, 400); 
+                }
+            }
+        });
+
+        // --- ИНИЦИАЛИЗАЦИЯ TELEGRAM ---
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -447,7 +514,7 @@
             const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
             document.getElementById('tg-name').innerText = fullName;
             document.getElementById('tg-username').innerText = user.username ? '@' + user.username : 'Игрок';
-            if (user.photo_url) document.getElementById('tg-avatar').innerHTML = `<img src="${user.photo_url}" alt="avatar">`;
+            if (user.photo_url) document.getElementById('tg-avatar').innerHTML = `<img src="${user.photo_url}" alt="avatar" onerror="this.onerror=null;this.src='';">`;
             refLinkInput.value = `https://t.me/${botUsername}?start=ref_${user.id}`;
         } else {
             refLinkInput.value = `https://t.me/${botUsername}?start=ref_test123`;
@@ -498,7 +565,6 @@
         // --- АУДИО (ЗВУКИ) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 1. Щелчок рулетки
         function playTick() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -513,7 +579,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + 0.04);
         }
 
-        // 2. Победа
         function playWin() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const notes = [523.25, 659.25, 783.99, 1046.50];
@@ -529,31 +594,26 @@
             });
         }
         
-        // 3. Звук продажи (Cha-ching)
         function playSellSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const notes = [1200, 1600];
             notes.forEach((freq, i) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
+                osc.type = 'sine'; osc.frequency.value = freq;
                 const start = audioCtx.currentTime + (i * 0.08);
-                gain.gain.setValueAtTime(0, start);
-                gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
+                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
                 gain.gain.exponentialRampToValueAtTime(0.01, start + 0.3);
                 osc.connect(gain); gain.connect(audioCtx.destination);
                 osc.start(start); osc.stop(start + 0.3);
             });
         }
 
-        // 4. Звук кликера (Soft Pop)
         function playTapSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
             gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
@@ -630,7 +690,7 @@
                 energy++;
                 updateEnergyUI();
             }
-        }, 36000); // 100 энергий = 3600 сек (1 час)
+        }, 36000); 
         updateEnergyUI();
 
         // --- БАЗА ПРЕДМЕТОВ И РУЛЕТКА ---
@@ -644,7 +704,7 @@
             rifle: { name: 'Винтовка', img: 'GunCase/винтовка.png', color: '#9d4edd', price: 250, isCurrency: false },
             berdanka: { name: 'Берданка', img: 'GunCase/берданка.png', color: '#00d2ff', price: 170, isCurrency: false },
             kalash: { name: 'Калаш', img: 'GunCase/калаш.png', color: '#ff4757', price: 350, isCurrency: false },
-            coins_200: { name: '200 Монет', img: 'money/монеты.png', color: '#ffcc00', price: 200, isCurrency: true }
+            coins_200: { name: '200 Монет', img: 'Money/монеты.png', color: '#ffcc00', price: 200, isCurrency: true }
         };
 
         const casesConfig = {
@@ -690,8 +750,8 @@
             document.getElementById('active-case-name').style.color = cfg.theme;
             
             const btn1 = document.getElementById('spin-btn');
-            document.getElementById('price-x1').innerHTML = `${cfg.price} <img src="money/монеты.png" style="width:12px; height:12px; margin-left:2px;">`;
-            document.getElementById('price-x2').innerHTML = `${cfg.price * 2} <img src="money/монеты.png" style="width:12px; height:12px; margin-left:2px;">`;
+            document.getElementById('price-x1').innerHTML = `${cfg.price} <img src="Money/монеты.png" style="width:12px; height:12px; margin-left:2px;" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
+            document.getElementById('price-x2').innerHTML = `${cfg.price * 2} <img src="Money/монеты.png" style="width:12px; height:12px; margin-left:2px;" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
             
             if(caseId === 'donat') {
                 btn1.style.background = `linear-gradient(135deg, #b8860b, ${cfg.theme})`;
@@ -712,7 +772,7 @@
 
             let dropsHtml = '';
             cfg.pool.forEach(p => {
-                const visual = p.item.img ? `<img src="${p.item.img}" class="drop-item-img" alt="${p.item.name}">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
+                const visual = p.item.img ? `<img src="${p.item.img}" loading="lazy" class="drop-item-img" alt="${p.item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
                 dropsHtml += `<div class="drop-item" style="border-bottom-color: ${p.item.color}">${visual}<div style="color: ${p.item.color}; font-family: var(--font-display); font-size: 11px;">${p.item.name}</div></div>`;
             });
             document.getElementById('drops-preview').innerHTML = dropsHtml;
@@ -749,7 +809,6 @@
             if (tabId === 'profile-sec') renderInventory();
         }
 
-        // ИСПРАВЛЕННЫЙ РАНДОМ С МАТЕМАТИЧЕСКОЙ ТОЧНОСТЬЮ
         function getRandomItem(pool) {
             const totalChance = pool.reduce((sum, p) => sum + p.chance, 0);
             const rand = Math.random() * totalChance;
@@ -762,7 +821,7 @@
         }
 
         function renderCaseItem(item) {
-            const visual = item.img ? `<img src="${item.img}" class="item-img" alt="${item.name}">` : `<div class="item-icon">${item.icon}</div>`;
+            const visual = item.img ? `<img src="${item.img}" loading="lazy" class="item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div class="item-icon">${item.icon}</div>`;
             return `<div class="case-item" style="border-bottom-color: ${item.color};">${visual}<span style="color: ${item.color}">${item.name}</span></div>`;
         }
 
@@ -778,7 +837,7 @@
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                 setTimeout(() => {
                     balBox.style.transform = 'scale(1)';
-                    balBox.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+                    balBox.style.borderColor = 'rgba(255, 204, 0, 0.3)';
                 }, 300);
                 return;
             }
@@ -883,7 +942,7 @@
             multiView.style.display = 'none';
             
             const iconContainer = document.getElementById('modal-icon-container');
-            if (item.img) iconContainer.innerHTML = `<img src="${item.img}" class="modal-item-img" alt="${item.name}">`;
+            if (item.img) iconContainer.innerHTML = `<img src="${item.img}" class="modal-item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
             else iconContainer.innerHTML = `<div class="modal-item-icon">${item.icon}</div>`;
             
             document.getElementById('modal-name').innerText = item.name;
@@ -894,12 +953,12 @@
             const priceEl = document.getElementById('modal-price');
 
             if (item.isCurrency) {
-                priceEl.innerHTML = `Начислено: ${item.price} <img src="money/монеты.png" class="coin-icon" alt="монеты">`;
+                priceEl.innerHTML = `Начислено: ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
                 actionsContainer.innerHTML = `<button class="btn btn-modal-sell" style="background: linear-gradient(135deg, #f39c12, #ffd700); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); flex-direction: row;" onclick="handleModalAction('claim')">ЗАБРАТЬ МОНЕТЫ</button>`;
             } else {
-                priceEl.innerHTML = `Стоимость: ${item.price} <img src="money/монеты.png" class="coin-icon" alt="монеты">`;
+                priceEl.innerHTML = `Стоимость: ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
                 actionsContainer.innerHTML = `
-                    <button class="btn btn-modal-sell" onclick="handleModalAction('sell', ${item.price})">ПРОДАТЬ ЗА ${item.price} <img src="money/монеты.png" class="coin-icon" alt="монеты"></button>
+                    <button class="btn btn-modal-sell" onclick="handleModalAction('sell', ${item.price})">ПРОДАТЬ ЗА ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                     <button class="btn btn-modal-keep" onclick="handleModalAction('keep')">ОСТАВИТЬ В ИНВЕНТАРЕ</button>
                 `;
             }
@@ -915,15 +974,15 @@
             const container = document.getElementById('multi-drop-container');
             let html = '';
             items.forEach(item => {
-                const visual = item.img ? `<img src="${item.img}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" alt="${item.name}">` : `<div style="font-size: 24px; margin-bottom: 5px;">${item.icon}</div>`;
-                html += `<div class="multi-drop-item" style="border-bottom-color: ${item.color}">${visual}<div style="color: ${item.color}; font-size: 11px; font-family: var(--font-display);">${item.name}</div><div style="color: var(--text-muted); font-size: 10px;">${item.price} <img src="money/монеты.png" style="width: 10px; height: 10px;" alt="монеты"></div></div>`;
+                const visual = item.img ? `<img src="${item.img}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 24px; margin-bottom: 5px;">${item.icon}</div>`;
+                html += `<div class="multi-drop-item" style="border-bottom-color: ${item.color}">${visual}<div style="color: ${item.color}; font-size: 11px; font-family: var(--font-display);">${item.name}</div><div style="color: var(--text-muted); font-size: 10px;">${item.price} <img src="Money/монеты.png" style="width: 10px; height: 10px;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div></div>`;
             });
             container.innerHTML = html;
-            document.getElementById('multi-total-price').innerHTML = `Общая стоимость: ${totalValue} <img src="money/монеты.png" class="coin-icon" alt="монеты">`;
+            document.getElementById('multi-total-price').innerHTML = `Общая стоимость: ${totalValue} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
             
             const actionsContainer = document.getElementById('modal-actions-container');
             actionsContainer.innerHTML = `
-                <button class="btn btn-modal-sell" style="flex-direction: row;" onclick="handleModalAction('sell', ${totalValue})">ПРОДАТЬ ВСЁ ЗА ${totalValue} <img src="money/монеты.png" class="coin-icon" alt="монеты"></button>
+                <button class="btn btn-modal-sell" style="flex-direction: row;" onclick="handleModalAction('sell', ${totalValue})">ПРОДАТЬ ВСЁ ЗА ${totalValue} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                 <button class="btn btn-modal-keep" onclick="handleModalAction('keep')">СОХРАНИТЬ В ИНВЕНТАРЕ</button>
             `;
             winModal.classList.add('show');
@@ -958,8 +1017,8 @@
             }
             let html = '';
             inventoryItems.forEach((item, i) => {
-                const visual = item.img ? `<img src="${item.img}" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
-                html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">${visual}<div style="margin: 5px 0; color: ${item.color}">${item.name}</div><button class="btn btn-sell" onclick="sellItem(${i})">ПРОДАТЬ ${item.price} <img src="money/монеты.png" class="coin-icon" alt="монеты"></button></div>`;
+                const visual = item.img ? `<img src="${item.img}" loading="lazy" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
+                html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">${visual}<div style="margin: 5px 0; color: ${item.color}">${item.name}</div><button class="btn btn-sell" onclick="sellItem(${i})">ПРОДАТЬ ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button></div>`;
             });
             invContainer.innerHTML = html;
         }
