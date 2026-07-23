@@ -38,6 +38,7 @@
             --font-body: 'Nunito', sans-serif;
         }
 
+        /* ИСПРАВЛЕНИЕ ФОНА и оптимизация touch-action */
         html, body {
             margin: 0; padding: 0;
             background-color: transparent; 
@@ -47,6 +48,7 @@
             overflow-x: hidden;
             min-height: 100vh;
             user-select: none;
+            touch-action: manipulation; /* Оптимизация тапов на мобилках */
         }
 
         h1, h2, h3, h4, .btn {
@@ -62,11 +64,13 @@
             background-color: var(--bg-base); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 0.5s ease, visibility 0.5s ease;
+            will-change: opacity, visibility;
         }
         .preloader-logo {
             width: 100px; height: 100px; object-fit: contain; margin-bottom: 30px;
             filter: drop-shadow(0 0 20px var(--brand-primary));
             animation: pulseIcon 1.5s infinite alternate;
+            will-change: filter, transform;
         }
         .preloader-bar-container {
             width: 70%; max-width: 300px; height: 8px;
@@ -79,6 +83,7 @@
             background: var(--brand-primary);
             box-shadow: 0 0 15px var(--brand-primary);
             transition: width 0.1s linear;
+            will-change: width;
         }
         .preloader-text {
             margin-top: 15px; font-family: var(--font-display); font-size: 16px;
@@ -94,14 +99,15 @@
         .blob {
             position: absolute; filter: blur(90px); opacity: 0.5;
             border-radius: 50%; animation: floatBlob 15s infinite alternate ease-in-out;
+            will-change: transform; /* Оптимизация */
         }
         .blob-1 { top: -10%; left: -10%; width: 400px; height: 400px; background: var(--brand-secondary); }
         .blob-2 { bottom: -10%; right: -20%; width: 500px; height: 500px; background: #005f9e; animation-delay: -5s; }
         .blob-3 { top: 30%; left: 40%; width: 300px; height: 300px; background: var(--brand-primary); opacity: 0.3; animation-duration: 20s; }
         
         @keyframes floatBlob {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(50px, 70px) scale(1.15); }
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(50px, 70px, 0) scale(1.15); }
         }
 
         /* 3D Сетка (Cyberpunk Grid) */
@@ -115,10 +121,18 @@
             animation: gridMove 4s linear infinite;
             mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
             -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
+            will-change: background-position;
         }
         @keyframes gridMove {
             0% { background-position: 0 0; }
             100% { background-position: 0 45px; }
+        }
+
+        /* ОПТИМИЗАЦИЯ ДЛЯ ТЕЛЕФОНОВ (Отключение лишнего) */
+        @media (max-width: 768px) {
+            .blob-2, .blob-3 { display: none; }
+            .blob-1 { opacity: 0.2; width: 300px; height: 300px; }
+            .cyber-grid { animation-duration: 8s; opacity: 0.3; }
         }
 
         /* Виньетка (затемнение по краям) */
@@ -136,9 +150,11 @@
         }
 
         .coin-icon { width: 1.2em; height: 1.2em; vertical-align: -0.2em; margin-left: 3px; }
-        .item-img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
-        .case-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.6)); transition: transform 0.3s; }
-        .drop-item-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        
+        /* Добавлена заглушка (background-color) для картинок, пока они грузятся */
+        .item-img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); background-color: rgba(0, 210, 255, 0.05); border-radius: 12px;}
+        .case-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.6)); transition: transform 0.3s; background-color: rgba(0, 210, 255, 0.05); border-radius: 20px;}
+        .drop-item-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); background-color: rgba(0, 210, 255, 0.05); border-radius: 8px;}
 
         /* Верхняя панель */
         .top-bar {
@@ -175,7 +191,7 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.4); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 3px;
         }
         .btn:active { transform: scale(0.95); box-shadow: 0 2px 10px var(--blue-glow); }
-        .btn:disabled { background: #2a3441; box-shadow: none; color: #5c6b7d; text-shadow: none; pointer-events: none; }
+        .btn:disabled { background: #2a3441; box-shadow: none; color: #5c6b7d; text-shadow: none; pointer-events: none; opacity: 0.7;}
         .btn-sell { background: rgba(46, 213, 115, 0.15); border: 1px solid rgba(46, 213, 115, 0.4); color: var(--success); box-shadow: none; margin-top: 10px; font-size: 13px; padding: 8px; font-family: var(--font-body); font-weight: 800; text-shadow: none; flex-direction: row; }
 
         /* Управление открытием */
@@ -199,7 +215,8 @@
         .roulette-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: var(--brand-primary); box-shadow: 0 0 20px var(--brand-primary), 0 0 10px var(--brand-primary); z-index: 10; transform: translateX(-50%); border-radius: 2px; }
 
         .roulette-tape-wrapper { position: absolute; left: 50%; top: 0; height: 100%; display: flex; align-items: center; z-index: 1; }
-        .roulette-tape { display: flex; align-items: center; transform: translateX(-57.5px); }
+        /* ОПТИМИЗАЦИЯ РУЛЕТКИ: will-change для плавной анимации */
+        .roulette-tape { display: flex; align-items: center; transform: translate3d(-57.5px, 0, 0); will-change: transform; }
         .case-item { width: 105px; height: 110px; margin: 0 5px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 14px; font-size: 13px; font-weight: 800; text-align: center; font-family: var(--font-display); background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(0,0,0,0.95)); border: 1px solid rgba(255,255,255,0.05); border-bottom: 5px solid transparent; box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
         .case-item::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at top, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
         .item-icon { font-size: 38px; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
@@ -213,9 +230,9 @@
         .clicker-wrapper { position: relative; width: 220px; height: 220px; margin: 30px 0; display: flex; justify-content: center; align-items: center; }
         .clicker-glow { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0, 210, 255, 0.5) 0%, transparent 70%); animation: pulseClicker 2s infinite alternate; z-index: 0; }
         @keyframes pulseClicker { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 1; } }
-        #main-clicker { width: 100%; height: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)); transition: transform 0.05s ease-out; cursor: pointer; pointer-events: auto; -webkit-user-drag: none; }
-        .floating-number { position: fixed; color: #ffcc00; font-family: var(--font-display); font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 1000; text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 15px rgba(255, 204, 0, 0.6); }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-70px) scale(1.3); } }
+        #main-clicker { width: 100%; height: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)); transition: transform 0.05s ease-out; cursor: pointer; pointer-events: auto; -webkit-user-drag: none; will-change: transform;}
+        .floating-number { position: fixed; color: #ffcc00; font-family: var(--font-display); font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 1000; text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 15px rgba(255, 204, 0, 0.6); will-change: transform, opacity;}
+        @keyframes floatUp { 0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } 100% { opacity: 0; transform: translate3d(0, -70px, 0) scale(1.3); } }
         .energy-bar-container { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid var(--blue-glass-border); border-radius: 12px; height: 18px; margin-top: auto; overflow: hidden; position: relative; }
         .energy-bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12); height: 100%; width: 100%; border-radius: 12px; transition: width 0.2s; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
 
@@ -278,7 +295,7 @@
             <span>Oxide Drop</span>
         </div>
         <div class="balance-chip" id="global-balance">
-            <span id="balance-val">15000</span> <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
+            <span id="balance-val">0</span> <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
         </div>
     </div>
 
@@ -339,7 +356,7 @@
                 <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Добывай монеты за клики</p>
                 
                 <div style="font-size: 36px; font-weight: 900; margin: 25px 0; font-family: var(--font-display); display: flex; align-items: center; justify-content: center; text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);">
-                    <span id="clicker-balance">15000</span> <img src="Money/монеты.png" class="coin-icon" style="width: 1em; height: 1em;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
+                    <span id="clicker-balance">0</span> <img src="Money/монеты.png" class="coin-icon" style="width: 1em; height: 1em;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                 </div>
 
                 <div class="clicker-wrapper">
@@ -369,18 +386,19 @@
                     <h4 style="margin: 0 0 8px 0; font-size: 16px;">Подписка в TG</h4>
                     <span style="color:var(--coin); font-size: 15px; font-family: var(--font-display); font-weight: 900; display:flex; align-items:center;">+ 300 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span>
                 </div>
-                <button class="btn" style="width: auto; padding: 12px 20px; font-size: 14px; flex-direction: row;" onclick="window.Telegram.WebApp.openTelegramLink('https://t.me/OxideDrop')">ВЫПОЛНИТЬ</button>
+                <button id="task-sub-btn" class="btn" style="width: auto; padding: 12px 20px; font-size: 14px; flex-direction: row;"></button>
             </div>
             
+            <!-- Реферальная система -->
             <div class="glass-panel" style="padding: 20px; margin-bottom: 25px;">
                 <h3 style="margin: 0 0 10px 0; font-size: 18px; color: var(--brand-primary);">ПРИГЛАСИ ДРУГА</h3>
-                <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.4;">Вы получите <span style="color: var(--coin); font-family: var(--font-display); font-weight: 900;">+100 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span> на баланс за каждого друга.</p>
+                <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.4;">Вы получите <span style="color: var(--coin); font-family: var(--font-display); font-weight: 900;">+100 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span> за каждого. <br>Приглашено: <span id="ref-count" style="color: #fff; font-weight: 800;">0</span></p>
                 <div class="ref-box">
-                    <input type="text" id="ref-link" class="ref-input" readonly value="https://t.me/bot?start=ref_123">
+                    <input type="text" id="ref-link" class="ref-input" readonly value="">
                     <button class="btn" id="copy-btn" style="width: auto; padding: 0 20px; font-size: 13px; flex-direction: row;" onclick="copyRef()">КОПИЯ</button>
                 </div>
-                <button class="btn" style="background: transparent; border: 1px dashed var(--blue-glass-border); color: var(--text-muted); box-shadow: none; margin-top: 15px; font-size: 11px; padding: 10px; flex-direction: row;" onclick="simulateFriendJoin()">
-                    [ТЕСТ] Имитация регистрации друга
+                <button class="btn" style="background: linear-gradient(135deg, #10b981, #2bad5f); margin-top: 15px; font-size: 14px; padding: 12px; flex-direction: row;" onclick="inviteFriend()">
+                    ПРИГЛАСИТЬ
                 </button>
             </div>
         </div>
@@ -448,8 +466,44 @@
     </div>
 
     <script>
-        // --- ЛОГИКА ПРЕЛОАДЕРА И КЭШИРОВАНИЯ ---
+        // --- 1. LOCAL STORAGE И СОСТОЯНИЕ (БЭКЕНД) ---
+        let balance = 15000; 
+        let inventoryItems = [];
+        let wonItemsArray = []; 
+        let energy = 100;
+        const maxEnergy = 100;
+        let referralsCount = 0;
+        let taskSubState = 'start'; // start, pending, ready, done
+
+        function saveState() {
+            const state = {
+                balance: balance,
+                inventory: inventoryItems,
+                energy: energy,
+                referrals: referralsCount,
+                taskSub: taskSubState
+            };
+            localStorage.setItem('oxideDropState', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem('oxideDropState');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    balance = state.balance !== undefined ? state.balance : 15000;
+                    inventoryItems = state.inventory || [];
+                    if (state.energy !== undefined) energy = state.energy;
+                    referralsCount = state.referrals || 0;
+                    taskSubState = state.taskSub || 'start';
+                } catch(e) {}
+            }
+        }
+
+        // --- 2. ПРЕЛОАДЕР И КЭШИРОВАНИЕ ---
         document.addEventListener("DOMContentLoaded", () => {
+            loadState(); // Загружаем данные из кэша
+            
             const imagesToLoad = [
                 'https://playoxide.com/media/oxide-brand.png',
                 'Clicer/кликер.png',
@@ -476,6 +530,13 @@
                 preloader.style.opacity = '0';
                 preloader.style.visibility = 'hidden';
                 setTimeout(() => { preloader.style.display = 'none'; }, 500);
+                
+                // Инициализируем UI после загрузки
+                updateBalanceUI(0);
+                updateEnergyUI();
+                renderInventory();
+                renderTaskSub();
+                document.getElementById('ref-count').innerText = referralsCount;
             }
 
             if(totalImages === 0) {
@@ -495,14 +556,11 @@
                 const percent = Math.round((loadedCount / totalImages) * 100);
                 progressFill.style.width = percent + '%';
                 progressText.innerText = percent + '%';
-                
-                if (loadedCount === totalImages) {
-                    setTimeout(finishPreloader, 400); 
-                }
+                if (loadedCount === totalImages) setTimeout(finishPreloader, 400); 
             }
         });
 
-        // --- ИНИЦИАЛИЗАЦИЯ TELEGRAM ---
+        // --- 3. ИНИЦИАЛИЗАЦИЯ TELEGRAM И РЕФЕРАЛЫ ---
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -520,6 +578,18 @@
             refLinkInput.value = `https://t.me/${botUsername}?start=ref_test123`;
         }
 
+        // Проверка входа по реферальной ссылке
+        const startParam = tg.initDataUnsafe?.start_param;
+        if (startParam && startParam.startsWith('ref_')) {
+            if (!localStorage.getItem('oxideJoinedRef')) {
+                setTimeout(() => {
+                    updateBalanceUI(100);
+                    localStorage.setItem('oxideJoinedRef', 'true');
+                    tg.showAlert('🎁 Вы получили бонус +100 монет за переход по приглашению!');
+                }, 1000);
+            }
+        }
+
         function copyRef() {
             refLinkInput.select();
             document.execCommand('copy');
@@ -530,39 +600,86 @@
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
 
+        function inviteFriend() {
+            const link = refLinkInput.value;
+            const text = 'Залетай в Oxide Drop и получай бонусы!';
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+            window.Telegram.WebApp.openTelegramLink(shareUrl);
+        }
+
+        // Симуляция для теста
         function simulateFriendJoin() {
+            referralsCount++;
+            document.getElementById('ref-count').innerText = referralsCount;
             updateBalanceUI(100);
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             tg.showAlert('🎉 По вашей ссылке зарегистрировался друг! Вам начислено +100 монет');
         }
 
-        // --- БАЛАНС И ИНВЕНТАРЬ ---
-        let balance = 15000; 
-        let inventoryItems = [];
-        let wonItemsArray = []; 
+        // --- 4. ЗАДАНИЕ ПОДПИСКА ---
+        function renderTaskSub() {
+            const btn = document.getElementById('task-sub-btn');
+            if (taskSubState === 'start') {
+                btn.innerText = 'ВЫПОЛНИТЬ';
+                btn.disabled = false;
+                btn.onclick = () => {
+                    window.Telegram.WebApp.openTelegramLink('https://t.me/OxideDrop');
+                    taskSubState = 'pending';
+                    saveState();
+                    renderTaskSub();
+                    setTimeout(() => {
+                        if (taskSubState === 'pending') {
+                            taskSubState = 'ready';
+                            saveState();
+                            renderTaskSub();
+                        }
+                    }, 5000);
+                };
+            } else if (taskSubState === 'pending') {
+                btn.innerText = 'ПРОВЕРКА...';
+                btn.disabled = true;
+                btn.onclick = null;
+            } else if (taskSubState === 'ready') {
+                btn.innerText = 'ПРОВЕРИТЬ';
+                btn.disabled = false;
+                btn.onclick = () => {
+                    updateBalanceUI(300);
+                    taskSubState = 'done';
+                    saveState();
+                    renderTaskSub();
+                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                };
+            } else if (taskSubState === 'done') {
+                btn.innerText = 'ВЫПОЛНЕНО';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+                btn.onclick = null;
+            }
+        }
 
+        // --- 5. БАЛАНС И ОБНОВЛЕНИЕ UI ---
+        const balanceBox = document.getElementById('global-balance');
         function updateBalanceUI(change = 0) {
             balance += change;
+            saveState(); // Сохраняем при любом изменении
             
             const balVal = document.getElementById('balance-val');
-            const balBox = document.getElementById('global-balance');
             if (balVal) balVal.innerText = balance;
             
             const clickerBal = document.getElementById('clicker-balance');
             if (clickerBal) clickerBal.innerText = balance;
 
             if (change !== 0) {
-                balBox.style.transform = change > 0 ? 'scale(1.15)' : 'scale(0.9)';
-                balBox.style.borderColor = change > 0 ? 'var(--success)' : 'var(--danger)';
+                balanceBox.style.transform = change > 0 ? 'scale(1.15)' : 'scale(0.9)';
+                balanceBox.style.borderColor = change > 0 ? 'var(--success)' : 'var(--danger)';
                 setTimeout(() => {
-                    balBox.style.transform = 'scale(1)';
-                    balBox.style.borderColor = 'rgba(255, 204, 0, 0.3)';
+                    balanceBox.style.transform = 'scale(1)';
+                    balanceBox.style.borderColor = 'rgba(255, 204, 0, 0.3)';
                 }, 300);
             }
         }
-        updateBalanceUI(0); 
 
-        // --- АУДИО (ЗВУКИ) ---
+        // --- 6. АУДИО (ЗВУКИ) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playTick() {
@@ -636,9 +753,7 @@
             });
         }
 
-        // --- ЛОГИКА КЛИКЕРА ---
-        let energy = 100;
-        const maxEnergy = 100;
+        // --- 7. ЛОГИКА КЛИКЕРА ---
         const energyText = document.getElementById('energy-text');
         const energyFill = document.getElementById('energy-fill');
         const clickerImg = document.getElementById('main-clicker');
@@ -663,6 +778,7 @@
             energy--;
             updateEnergyUI();
             updateBalanceUI(1);
+            saveState(); // Сохраняем энергию и баланс
             
             playTapSound();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -689,11 +805,11 @@
             if (energy < maxEnergy) {
                 energy++;
                 updateEnergyUI();
+                saveState();
             }
         }, 36000); 
-        updateEnergyUI();
 
-        // --- БАЗА ПРЕДМЕТОВ И РУЛЕТКА ---
+        // --- 8. БАЗА ПРЕДМЕТОВ И РУЛЕТКА (ОПТИМИЗАЦИЯ) ---
         const allItems = {
             copter: { name: 'Коптер', img: 'DonatCase/коптер.png', color: '#ff4757', price: 450, isCurrency: false },
             buggy: { name: 'Багги', img: 'DonatCase/багги.png', color: '#00d2ff', price: 400, isCurrency: false },
@@ -726,7 +842,9 @@
         let activeCaseId = null;
         let isSpinning = false;
         const ITEM_WIDTH = 115; 
-        function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+        
+        // Математическое смягчение (ease-out cubic)
+        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
         function setButtonsState(disabled) {
             document.getElementById('spin-btn').disabled = disabled;
@@ -772,7 +890,7 @@
 
             let dropsHtml = '';
             cfg.pool.forEach(p => {
-                const visual = p.item.img ? `<img src="${p.item.img}" loading="lazy" class="drop-item-img" alt="${p.item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
+                const visual = p.item.img ? `<img src="${p.item.img}" loading="lazy" decoding="async" class="drop-item-img" alt="${p.item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
                 dropsHtml += `<div class="drop-item" style="border-bottom-color: ${p.item.color}">${visual}<div style="color: ${p.item.color}; font-family: var(--font-display); font-size: 11px;">${p.item.name}</div></div>`;
             });
             document.getElementById('drops-preview').innerHTML = dropsHtml;
@@ -787,7 +905,8 @@
                 for(let j=0; j<10; j++) { initialHtml += renderCaseItem(getRandomItem(cfg.pool)); }
                 const rWrapper = document.createElement('div');
                 rWrapper.className = 'roulette-wrapper';
-                rWrapper.innerHTML = `<div class="roulette-tape-wrapper"><div class="roulette-tape" id="tape-${i}" style="transform: translateX(-57.5px)">${initialHtml}</div></div>`;
+                // will-change и translate3d зашиты в CSS класса .roulette-tape
+                rWrapper.innerHTML = `<div class="roulette-tape-wrapper"><div class="roulette-tape" id="tape-${i}" style="transform: translate3d(-57.5px, 0, 0)">${initialHtml}</div></div>`;
                 container.appendChild(rWrapper);
             }
         }
@@ -821,7 +940,7 @@
         }
 
         function renderCaseItem(item) {
-            const visual = item.img ? `<img src="${item.img}" loading="lazy" class="item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div class="item-icon">${item.icon}</div>`;
+            const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div class="item-icon">${item.icon}</div>`;
             return `<div class="case-item" style="border-bottom-color: ${item.color};">${visual}<span style="color: ${item.color}">${item.name}</span></div>`;
         }
 
@@ -853,7 +972,7 @@
             wonItemsArray = [];
             let totalValue = 0;
             let animationsFinished = 0;
-            const targetIndex = 50; 
+            const targetIndex = 20; // ОПТИМИЗАЦИЯ: Снижено с 50 до 20
             const targetX = (targetIndex * ITEM_WIDTH);
             
             if (isFastOpen) {
@@ -865,7 +984,7 @@
                     const tape = document.getElementById(`tape-${i}`);
                     if(tape) {
                         tape.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                        tape.style.transform = `translateX(calc(-57.5px - ${ITEM_WIDTH * 5}px))`;
+                        tape.style.transform = `translate3d(calc(-57.5px - ${ITEM_WIDTH * 5}px), 0, 0)`;
                     }
                 }
                 setTimeout(() => finishOpening(count, totalValue), 500);
@@ -878,7 +997,8 @@
                 
                 let tapeHtml = '';
                 const tapeItems = [];
-                for (let j = 0; j < 60; j++) {
+                // ОПТИМИЗАЦИЯ: Генерируем 25 элементов вместо 60
+                for (let j = 0; j < 25; j++) {
                     const item = getRandomItem(currentCase.pool);
                     tapeItems.push(item);
                     tapeHtml += renderCaseItem(item);
@@ -890,7 +1010,7 @@
                 
                 tape.innerHTML = tapeHtml;
                 tape.style.transition = 'none';
-                tape.style.transform = 'translateX(-57.5px)';
+                tape.style.transform = 'translate3d(-57.5px, 0, 0)';
                 
                 setTimeout(() => {
                     animateTape(tape, targetX, () => {
@@ -906,13 +1026,14 @@
             let lastTick = -1;
             function step(now) {
                 if (!startT) startT = now;
-                let progress = (now - startT) / 5000; 
+                // ОПТИМИЗАЦИЯ: Длительность 3500ms вместо 5000ms
+                let progress = (now - startT) / 3500; 
                 if (progress > 1) progress = 1;
                 const currentX = targetX * easeOut(progress);
-                tape.style.transform = `translateX(calc(-57.5px - ${currentX}px))`;
+                tape.style.transform = `translate3d(calc(-57.5px - ${currentX}px), 0, 0)`;
 
                 const currIdx = Math.floor((currentX + (ITEM_WIDTH / 2)) / ITEM_WIDTH);
-                if (currIdx !== lastTick && currIdx < 60) {
+                if (currIdx !== lastTick && currIdx < 25) { // Оптимизация (макс 25 элементов)
                     if (lastTick !== -1 && progress < 0.98) playTick();
                     lastTick = currIdx;
                 }
@@ -931,7 +1052,7 @@
             else showWinModalMulti(wonItemsArray, totalValue);
         }
 
-        // --- ЛОГИКА МОДАЛОК ---
+        // --- 9. ЛОГИКА МОДАЛОК ---
         const winModal = document.getElementById('win-modal');
         const singleView = document.getElementById('single-drop-view');
         const multiView = document.getElementById('multi-drop-view');
@@ -942,7 +1063,7 @@
             multiView.style.display = 'none';
             
             const iconContainer = document.getElementById('modal-icon-container');
-            if (item.img) iconContainer.innerHTML = `<img src="${item.img}" class="modal-item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
+            if (item.img) iconContainer.innerHTML = `<img src="${item.img}" loading="lazy" decoding="async" class="modal-item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
             else iconContainer.innerHTML = `<div class="modal-item-icon">${item.icon}</div>`;
             
             document.getElementById('modal-name').innerText = item.name;
@@ -974,7 +1095,7 @@
             const container = document.getElementById('multi-drop-container');
             let html = '';
             items.forEach(item => {
-                const visual = item.img ? `<img src="${item.img}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 24px; margin-bottom: 5px;">${item.icon}</div>`;
+                const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 24px; margin-bottom: 5px;">${item.icon}</div>`;
                 html += `<div class="multi-drop-item" style="border-bottom-color: ${item.color}">${visual}<div style="color: ${item.color}; font-size: 11px; font-family: var(--font-display);">${item.name}</div><div style="color: var(--text-muted); font-size: 10px;">${item.price} <img src="Money/монеты.png" style="width: 10px; height: 10px;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div></div>`;
             });
             container.innerHTML = html;
@@ -1004,6 +1125,7 @@
                 if (coinsToBalance > 0) updateBalanceUI(coinsToBalance);
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
             }
+            saveState(); // Обязательное сохранение
             winModal.classList.remove('show');
             wonItemsArray = [];
             renderRouletteLines(1);
@@ -1017,7 +1139,7 @@
             }
             let html = '';
             inventoryItems.forEach((item, i) => {
-                const visual = item.img ? `<img src="${item.img}" loading="lazy" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
+                const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
                 html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">${visual}<div style="margin: 5px 0; color: ${item.color}">${item.name}</div><button class="btn btn-sell" onclick="sellItem(${i})">ПРОДАТЬ ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button></div>`;
             });
             invContainer.innerHTML = html;
@@ -1028,6 +1150,7 @@
             playSellSound();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             inventoryItems.splice(index, 1);
+            saveState(); // Сохраняем состояние после продажи
             renderInventory();
         }
     </script>
