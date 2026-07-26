@@ -227,12 +227,14 @@
         .nav-item.active { color: var(--text-main); transform: translateY(-4px); }
         .nav-item.active svg { fill: var(--brand-primary); filter: drop-shadow(0 0 12px var(--blue-glow)); }
 
-        /* Модалка (рулетка) */
+        /* Модалка (общие стили) */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
         .modal-overlay.show { display: flex; opacity: 1; }
         .modal-content { background: var(--blue-glass); border: 1px solid var(--blue-glass-border); border-radius: 24px; padding: 24px 20px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 2px 0 rgba(255, 255, 255, 0.1); transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
         .modal-overlay.show .modal-content { transform: scale(1); }
         .modal-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 50%; filter: blur(50px); z-index: -1; opacity: 0.5; }
+        
+        /* Стили выигрыша рулетки кейсов */
         .modal-item-img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6)); animation: pulseIcon 2s infinite alternate; }
         .modal-item-name { font-family: var(--font-display); font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
         .modal-item-price { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; display: flex; justify-content: center; align-items: center; }
@@ -268,6 +270,22 @@
             opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
         }
         .tut-message-text { font-size: 16px; font-weight: 800; font-family: var(--font-display); line-height: 1.5; margin-bottom: 20px; color: var(--text-main); }
+
+        /* --- СТИЛИ АПГРЕЙДА (СИСТЕМА GAMBLE) --- */
+        #upgrade-modal .modal-content { max-width: 420px; padding: 20px; }
+        .upgrade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 45vh; overflow-y: auto; padding-right: 5px; margin-top: 15px;}
+        .upgrade-grid::-webkit-scrollbar { width: 4px; }
+        .upgrade-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .upgrade-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .upgrade-target-card { border: 2px solid transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 10px 5px; border-radius: 12px; transition: 0.2s; background: rgba(0,0,0,0.5); }
+        .upgrade-target-card.selected { border-color: var(--brand-primary); box-shadow: 0 0 15px var(--blue-glow); transform: translateY(-3px); background: rgba(0, 210, 255, 0.1); }
+        
+        /* Киберпанк Колесо Апгрейда */
+        .wheel-container { position: relative; width: 240px; height: 240px; margin: 20px auto; border-radius: 50%; padding: 8px; background: rgba(0,0,0,0.5); box-shadow: 0 0 30px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0,0,0,0.8); }
+        .wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative; overflow: hidden; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 24px solid #fff; z-index: 10; filter: drop-shadow(0 0 8px #fff); }
+        .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: var(--bg-base); border-radius: 50%; border: 2px solid var(--blue-glass-border); display: flex; justify-content: center; align-items: center; font-weight: 900; font-family: var(--font-display); z-index: 5; box-shadow: 0 0 20px rgba(0,0,0,0.9); font-size: 13px;}
+        .upgrade-section { display: none; }
     </style>
 </head>
 <body>
@@ -306,10 +324,9 @@
         <div id="main-sec" class="section active">
             <div id="cases-list" class="cases-grid">
                 
-                <!-- ДОНАТ КЕЙС (Добавлен id="tut-case" для туториала) -->
+                <!-- ДОНАТ КЕЙС -->
                 <div class="case-card glass-panel case-theme-donat" id="tut-case" onclick="openRouletteView('donat')">
                     <div class="case-img-placeholder">
-                        <!-- Критичная картинка: загружается сразу -->
                         <img src="DonatCase/кейс.png" class="case-img" alt="Донат Кейс" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                     </div>
                     <div class="case-info">
@@ -331,7 +348,7 @@
 
             </div>
 
-            <!-- РУЛЕТКА -->
+            <!-- РУЛЕТКА КЕЙСОВ -->
             <div id="roulette-view" class="glass-panel" style="display: none;">
                 <div class="roulette-header">
                     <button onclick="closeRouletteView()">&larr;</button>
@@ -399,7 +416,7 @@
             <div class="flex-col-16">
                 <h2 style="margin-top:0; color: var(--brand-primary);">ЗАДАНИЯ И ДРУЗЬЯ</h2>
                 
-                <!-- ЕЖЕДНЕВНЫЙ БОНУС (Добавлен id="tut-task-panel") -->
+                <!-- ЕЖЕДНЕВНЫЙ БОНУС -->
                 <div class="glass-panel" id="tut-task-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h4 style="margin: 0 0 8px 0; font-size: 16px;">Ежедневный бонус</h4>
@@ -436,7 +453,6 @@
 
         <!-- ПРОФИЛЬ И ИНВЕНТАРЬ -->
         <div id="profile-sec" class="section">
-            <!-- (Добавлен id="tut-profile-panel") -->
             <div class="glass-panel" id="tut-profile-panel" style="padding: 20px; margin-bottom: 24px;">
                 <div class="profile-header">
                     <div class="profile-avatar" id="tg-avatar">👤</div>
@@ -478,7 +494,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно Выигрыша Кейса -->
     <div class="modal-overlay" id="win-modal">
         <div class="modal-content" id="modal-content-box">
             <div class="modal-glow" id="modal-glow"></div>
@@ -501,14 +517,47 @@
         </div>
     </div>
 
-    <!-- ИНТЕРАКТИВНЫЙ ТУТОРИАЛ (НОВОЕ) -->
+    <!-- МОДАЛЬНОЕ ОКНО АПГРЕЙДА (СИСТЕМА GAMBLE) -->
+    <div class="modal-overlay" id="upgrade-modal">
+        <div class="modal-content" style="padding: 24px 15px;">
+            <button onclick="closeUpgradeModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
+            <h2 style="margin-top: 0; color: #fff; margin-bottom: 15px;">АПГРЕЙД СКИНА</h2>
+            
+            <!-- Этап 1: Выбор -->
+            <div id="upgrade-selection-section" class="upgrade-section" style="display: block;">
+                <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">Выберите желаемый предмет:</div>
+                <div class="upgrade-grid" id="upgrade-targets-grid"></div>
+                <button class="btn" id="btn-confirm-upgrade" style="margin-top: 20px;" onclick="startUpgradeSpin()" disabled>ВЫБЕРИТЕ ПРЕДМЕТ</button>
+            </div>
+            
+            <!-- Этап 2: Рулетка (Вращение) -->
+            <div id="upgrade-wheel-section" class="upgrade-section" style="display: none;">
+                <div class="wheel-container">
+                    <div class="wheel-pointer"></div>
+                    <div class="wheel" id="upgrade-wheel"></div>
+                    <div class="wheel-center-dot" id="upgrade-wheel-chance">0%</div>
+                </div>
+                <div style="font-size: 14px; color: var(--text-muted); margin-top: 15px;" id="upgrade-spin-status">Крутим барабан...</div>
+            </div>
+
+            <!-- Этап 3: Результат -->
+            <div id="upgrade-result-section" class="upgrade-section" style="display: none;">
+                <div id="upgrade-res-icon" style="margin: 20px 0; height: 100px; display: flex; justify-content: center; align-items: center;"></div>
+                <h2 id="upgrade-res-title" style="margin: 0; font-size: 24px;">РЕЗУЛЬТАТ</h2>
+                <div id="upgrade-res-msg" style="color: var(--text-muted); font-size: 14px; margin-top: 10px; margin-bottom: 20px;"></div>
+                <button class="btn" onclick="closeUpgradeModal()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); box-shadow: none;">ОТЛИЧНО</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ИНТЕРАКТИВНЫЙ ТУТОРИАЛ -->
     <div class="tut-overlay-bg" id="tut-overlay-bg"></div>
     <div class="tut-message-box" id="tut-message-box">
         <div class="tut-message-text" id="tut-int-text">Добро пожаловать в OxideDrop!</div>
         <button class="btn" id="tut-int-btn" onclick="nextInteractiveStep()">ДАЛЕЕ →</button>
     </div>
 
-    <!-- ОСНОВНОЙ СКРИПТ (загружается в конце для ускорения) -->
+    <!-- ОСНОВНОЙ СКРИПТ -->
     <script>
         // Запускаем таймер прелоадера СРАЗУ, не дожидаясь DOM
         const preloaderStartTime = Date.now();
@@ -559,7 +608,7 @@
                 } catch(e) {}
             }
             
-            // Восстановление энергии за время отсутствия (1 ед. каждые 36 сек = 36000 мс)
+            // Восстановление энергии
             const now = Date.now();
             if (energy < maxEnergy) {
                 const diffMs = now - lastEnergyUpdate;
@@ -574,11 +623,10 @@
             saveState();
         }
 
-        // --- 2. ПРЕЛОАДЕР И КЭШИРОВАНИЕ (СУПЕРБЫСТРЫЙ) ---
+        // --- 2. ПРЕЛОАДЕР И КЭШИРОВАНИЕ ---
         document.addEventListener("DOMContentLoaded", () => {
             loadState(); 
             
-            // ОПТИМИЗАЦИЯ: Грузим только 5 главных картинок, остальные грузятся "лениво" (loading="lazy" в самом коде)
             const criticalImages = [
                 'https://playoxide.com/media/oxide-brand.png',
                 'Clicer/кликер.png',
@@ -594,7 +642,6 @@
             const preloader = document.getElementById('preloader');
 
             function finishPreloader() {
-                // Минимальное время прелоадера - 1.5 секунды, чтобы было плавно и красиво
                 const elapsed = Date.now() - preloaderStartTime;
                 const minTime = 1500; 
                 const delay = elapsed < minTime ? minTime - elapsed : 0;
@@ -602,9 +649,8 @@
                 setTimeout(() => {
                     preloader.style.opacity = '0';
                     preloader.style.visibility = 'hidden';
-                    setTimeout(() => { preloader.style.display = 'none'; }, 500); // Полное скрытие
+                    setTimeout(() => { preloader.style.display = 'none'; }, 500);
                     
-                    // Инициализируем UI
                     updateBalanceUI(0);
                     updateEnergyUI();
                     renderInventory();
@@ -613,17 +659,13 @@
                     document.getElementById('ref-count').innerText = referralsCount;
                     document.getElementById('cases-opened-count').innerText = casesOpened;
                     
-                    // Запуск туториала
                     if (!tutorialCompleted) {
                         setTimeout(startInteractiveTutorial, 500);
                     }
                 }, delay);
             }
 
-            if(totalImages === 0) {
-                finishPreloader();
-                return;
-            }
+            if(totalImages === 0) { finishPreloader(); return; }
 
             criticalImages.forEach(src => {
                 const img = new Image();
@@ -654,7 +696,6 @@
         function startInteractiveTutorial() {
             document.getElementById('tut-overlay-bg').style.display = 'block';
             document.getElementById('tut-message-box').style.display = 'flex';
-            // Небольшая задержка для плавного появления
             setTimeout(() => {
                 document.getElementById('tut-overlay-bg').style.opacity = '1';
                 document.getElementById('tut-message-box').style.opacity = '1';
@@ -663,20 +704,15 @@
         }
 
         function renderInteractiveStep() {
-            // Убираем старую подсветку
             document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
             
             const step = tutStepsInteractive[currentInteractiveStep];
             
-            // 1. Авто-переключение вкладки
             if (step.tabIdx !== undefined) {
                 const navItems = document.querySelectorAll('.nav-item');
-                if(navItems[step.tabIdx]) {
-                    navItems[step.tabIdx].click(); 
-                }
+                if(navItems[step.tabIdx]) { navItems[step.tabIdx].click(); }
             }
             
-            // 2. Меняем текст
             document.getElementById('tut-int-text').innerText = step.text;
             
             const btn = document.getElementById('tut-int-btn');
@@ -686,7 +722,6 @@
                 btn.innerText = "ДАЛЕЕ →";
             }
             
-            // 3. Подсвечиваем нужный элемент (с задержкой, чтобы вкладка успела открыться)
             if (step.target) {
                 setTimeout(() => {
                     const el = document.getElementById(step.target);
@@ -700,7 +735,6 @@
                 currentInteractiveStep++;
                 renderInteractiveStep();
             } else {
-                // Завершение обучения
                 document.getElementById('tut-overlay-bg').style.opacity = '0';
                 document.getElementById('tut-message-box').style.opacity = '0';
                 document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
@@ -713,7 +747,6 @@
                 tutorialCompleted = true;
                 saveState();
                 
-                // Возвращаем на первую вкладку (Кейсы)
                 document.querySelectorAll('.nav-item')[0].click();
             }
         }
@@ -723,7 +756,6 @@
             const btn = document.getElementById('daily-bonus-btn');
             const now = Date.now();
             const msIn24h = 86400000;
-            
             if (now - dailyBonus >= msIn24h) {
                 btn.innerText = 'ЗАБРАТЬ';
                 btn.disabled = false;
@@ -749,7 +781,6 @@
         // --- 3. ИНИЦИАЛИЗАЦИЯ TELEGRAM И РЕФЕРАЛЫ ---
         const tg = window.Telegram.WebApp;
         tg.expand();
-
         let botUsername = "OxideDropBot"; 
         const user = tg.initDataUnsafe?.user;
         const refLinkInput = document.getElementById('ref-link');
@@ -865,7 +896,6 @@
 
         // --- 6. АУДИО (ЗВУКИ) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
         function playTick() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
@@ -1238,7 +1268,7 @@
             else showWinModalMulti(wonItemsArray, totalValue);
         }
 
-        // --- 9. ЛОГИКА МОДАЛОК ---
+        // --- 9. ЛОГИКА МОДАЛОК ВЫИГРЫША С КЕЙСОВ ---
         const winModal = document.getElementById('win-modal');
         const singleView = document.getElementById('single-drop-view');
         const multiView = document.getElementById('multi-drop-view');
@@ -1317,6 +1347,7 @@
             renderRouletteLines(1);
         }
 
+        // --- 10. ИНВЕНТАРЬ (ОБНОВЛЁН ДЛЯ АПГРЕЙДА) ---
         function renderInventory() {
             const invContainer = document.getElementById('inventory');
             if (inventoryItems.length === 0) {
@@ -1326,7 +1357,18 @@
             let html = '';
             inventoryItems.forEach((item, i) => {
                 const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
-                html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">${visual}<div style="margin: 5px 0; color: ${item.color}">${item.name}</div><button class="btn btn-sell" onclick="sellItem(${i})">ПРОДАТЬ ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button></div>`;
+                
+                // НОВОЕ: ИСПРАВЛЕНА ВЫЛЕЗАЮЩАЯ КНОПКА (теперь кнопки друг под другом и занимают 100% ширины)
+                let upgradeBtnHTML = item.isCurrency ? '' : `<button class="btn" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px; background: linear-gradient(135deg, #9b59b6, #e74c3c); box-shadow: none;" onclick="openUpgradeModal(${i})">АПГРЕЙД</button>`;
+
+                html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">
+                    ${visual}
+                    <div style="margin: 5px 0; color: ${item.color}">${item.name}</div>
+                    <div style="display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: auto;">
+                        <button class="btn btn-sell" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px;" onclick="sellItem(${i})">ПРОДАТЬ ${item.price}</button>
+                        ${upgradeBtnHTML}
+                    </div>
+                </div>`;
             });
             invContainer.innerHTML = html;
         }
@@ -1338,6 +1380,189 @@
             inventoryItems.splice(index, 1);
             saveState(); 
             renderInventory();
+        }
+
+        // --- 11. ЛОГИКА АПГРЕЙДА (СИСТЕМА GAMBLE) ---
+        let currentUpgradeSourceIndex = null;
+        let currentUpgradeTargetKey = null;
+
+        function openUpgradeModal(index) {
+            currentUpgradeSourceIndex = index;
+            const sourceItem = inventoryItems[index];
+            
+            let validTargets = [];
+            for (const key in allItems) {
+                const item = allItems[key];
+                if (!item.isCurrency && item.price > sourceItem.price) {
+                    validTargets.push({ key, item });
+                }
+            }
+            
+            validTargets.sort((a, b) => a.item.price - b.item.price);
+            
+            const grid = document.getElementById('upgrade-targets-grid');
+            if (validTargets.length === 0) {
+                grid.innerHTML = '<div style="color:var(--text-muted); grid-column: 1/-1; text-align: center; font-size: 12px; padding: 20px;">Нет предметов дороже вашего. Вы достигли максимума!</div>';
+            } else {
+                grid.innerHTML = validTargets.map(t => {
+                    const visual = t.item.img ? `<img src="${t.item.img}" loading="lazy" style="width:50px;height:50px; object-fit:contain; margin-bottom:5px;">` : `<div style="font-size:30px;">${t.item.icon}</div>`;
+                    return `<div class="upgrade-target-card" id="upgrade-target-${t.key}" onclick="selectUpgradeTarget('${t.key}', ${sourceItem.price})">
+                        ${visual}
+                        <div style="font-size: 11px; font-family: var(--font-display); font-weight: 800; color: ${t.item.color}; text-align: center;">${t.item.name}</div>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">${t.item.price} <img src="Money/монеты.png" style="width:10px;height:10px;vertical-align:-1px;"></div>
+                    </div>`;
+                }).join('');
+            }
+            
+            document.getElementById('upgrade-modal').classList.add('show');
+            document.getElementById('upgrade-selection-section').style.display = 'block';
+            document.getElementById('upgrade-wheel-section').style.display = 'none';
+            document.getElementById('upgrade-result-section').style.display = 'none';
+            
+            currentUpgradeTargetKey = null;
+            updateUpgradeButtonUI(sourceItem.price);
+        }
+
+        function selectUpgradeTarget(targetKey, sourcePrice) {
+            document.querySelectorAll('.upgrade-target-card').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`upgrade-target-${targetKey}`).classList.add('selected');
+            currentUpgradeTargetKey = targetKey;
+            updateUpgradeButtonUI(sourcePrice);
+        }
+
+        function updateUpgradeButtonUI(sourcePrice) {
+            const btn = document.getElementById('btn-confirm-upgrade');
+            if (!currentUpgradeTargetKey) {
+                btn.disabled = true;
+                btn.innerText = "ВЫБЕРИТЕ ПРЕДМЕТ";
+            } else {
+                const targetItem = allItems[currentUpgradeTargetKey];
+                let chance = (sourcePrice / targetItem.price) * 100;
+                chance = Math.max(1, Math.min(95, chance)); 
+                
+                if (balance < 50) {
+                    btn.disabled = true;
+                    btn.innerHTML = `НЕДОСТАТОЧНО МОНЕТ (НУЖНО 50)`;
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = `КРУТИТЬ (ШАНС ${chance.toFixed(1)}%) <br><span style="font-size:10px; font-family: var(--font-body); font-weight:600; margin-top:2px;">Цена: 50 монет</span>`;
+                }
+            }
+        }
+
+        function startUpgradeSpin() {
+            if (!currentUpgradeTargetKey || balance < 50 || currentUpgradeSourceIndex === null) return;
+            
+            updateBalanceUI(-50);
+            
+            const sourceItem = inventoryItems[currentUpgradeSourceIndex];
+            const targetItem = allItems[currentUpgradeTargetKey];
+            
+            let chance = (sourceItem.price / targetItem.price) * 100;
+            chance = Math.max(1, Math.min(95, chance));
+            
+            const isWin = (Math.random() * 100) <= chance;
+            
+            document.getElementById('upgrade-selection-section').style.display = 'none';
+            document.getElementById('upgrade-wheel-section').style.display = 'block';
+            
+            const wheel = document.getElementById('upgrade-wheel');
+            const statusText = document.getElementById('upgrade-spin-status');
+            statusText.innerText = "Крутим барабан...";
+            statusText.style.color = "var(--text-muted)";
+            
+            const greenDeg = (chance / 100) * 360;
+            wheel.style.background = `conic-gradient(var(--success) 0deg ${greenDeg}deg, var(--danger) ${greenDeg}deg 360deg)`;
+            
+            const padGreen = Math.min(2, greenDeg / 10);
+            const padRed = Math.min(2, (360 - greenDeg) / 10);
+            let finalPointerAngle;
+            
+            if (isWin) {
+                finalPointerAngle = padGreen + Math.random() * (greenDeg - 2 * padGreen);
+            } else {
+                finalPointerAngle = greenDeg + padRed + Math.random() * (360 - greenDeg - 2 * padRed);
+            }
+            
+            const baseSpins = 5 * 360; 
+            const targetRotation = baseSpins + (360 - finalPointerAngle);
+            
+            wheel.style.transition = 'none';
+            wheel.style.transform = `rotate(0deg)`;
+            wheel.offsetHeight; 
+            
+            wheel.style.transition = 'transform 4s cubic-bezier(0.1, 1.4, 0.3, 1)';
+            wheel.style.transform = `rotate(${targetRotation}deg)`;
+            
+            document.getElementById('upgrade-wheel-chance').innerText = `${chance.toFixed(1)}%`;
+            
+            // НОВОЕ: Добавлен звук тиканья при вращении колеса
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            let startT = Date.now();
+            let lastTick = -1;
+            function wheelAudioStep() {
+                let progress = (Date.now() - startT) / 4000;
+                if (progress > 1) progress = 1;
+                
+                // Используем easeOut для синхронизации частоты тиков с замедлением рулетки
+                const currentRot = targetRotation * easeOut(progress); 
+                const currIdx = Math.floor(currentRot / 25); // Один тик каждые 25 градусов
+                
+                if (currIdx !== lastTick && progress < 0.95) { // Не тикаем в конце при физическом отскоке рулетки
+                    playTick();
+                    lastTick = currIdx;
+                }
+                if (progress < 1) requestAnimationFrame(wheelAudioStep);
+            }
+            requestAnimationFrame(wheelAudioStep);
+            
+            setTimeout(() => {
+                finishUpgrade(isWin, targetItem);
+            }, 4000);
+        }
+
+        function finishUpgrade(isWin, targetItem) {
+            inventoryItems.splice(currentUpgradeSourceIndex, 1);
+            
+            if (isWin) {
+                inventoryItems.unshift(targetItem);
+                playWin();
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            }
+            
+            saveState();
+            renderInventory(); 
+            showUpgradeResult(isWin, targetItem);
+        }
+
+        function showUpgradeResult(isWin, item) {
+            const resTitle = document.getElementById('upgrade-res-title');
+            const resMsg = document.getElementById('upgrade-res-msg');
+            const iconContainer = document.getElementById('upgrade-res-icon');
+            
+            if (isWin) {
+                const visual = item.img ? `<img src="${item.img}" style="width:100px;height:100px; object-fit:contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));">` : `<div style="font-size:60px;">${item.icon}</div>`;
+                iconContainer.innerHTML = visual;
+                resTitle.innerText = 'УСПЕШНЫЙ АПГРЕЙД!';
+                resTitle.style.color = 'var(--success)';
+                resMsg.innerHTML = `Вы получили новый скин: <br><span style="color:${item.color}; font-weight:800; font-size:16px;">${item.name}</span>`;
+            } else {
+                iconContainer.innerHTML = `<div style="font-size:80px; filter: grayscale(100%); opacity:0.5;">☠️</div>`;
+                resTitle.innerText = 'ПРОВАЛ';
+                resTitle.style.color = 'var(--danger)';
+                resMsg.innerText = `Ваш предмет был уничтожен.`;
+            }
+            
+            document.getElementById('upgrade-wheel-section').style.display = 'none';
+            document.getElementById('upgrade-result-section').style.display = 'block';
+        }
+
+        function closeUpgradeModal() {
+            document.getElementById('upgrade-modal').classList.remove('show');
+            currentUpgradeSourceIndex = null;
+            currentUpgradeTargetKey = null;
         }
     </script>
 </body>
