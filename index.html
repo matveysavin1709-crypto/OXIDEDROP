@@ -4,35 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Oxide Drop</title>
-    <!-- Основной скрипт TG грузим синхронно, так как от него зависит всё приложение -->
+    <!-- Основной скрипт TG грузим синхронно -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <!-- СРОЧНЫЙ ФИКС СЕРОГО ЭКРАНА: Эти стили загрузятся первыми, до шрифтов -->
+    <!-- СРОЧНЫЙ ФИКС СЕРОГО ЭКРАНА И ГЛАДКИЙ ПРЕЛОАДЕР -->
     <style>
-        html, body {
-            background-color: #060b14 !important; /* Мгновенный тёмный фон */
-            margin: 0; padding: 0;
-        }
+        html, body { background-color: #060b14 !important; margin: 0; padding: 0; scroll-behavior: smooth; }
         #preloader {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: #060b14; z-index: 99999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
         }
-        .preloader-logo { width: 100px; height: 100px; object-fit: contain; margin-bottom: 30px; filter: drop-shadow(0 0 20px #00d2ff); animation: pulseIcon 1.5s infinite alternate; }
-        .preloader-bar-container { width: 70%; max-width: 300px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; border: 1px solid rgba(0, 210, 255, 0.25); overflow: hidden; }
-        .preloader-bar-fill { height: 100%; width: 0%; background: #00d2ff; box-shadow: 0 0 15px #00d2ff; transition: width 0.1s linear; }
-        .preloader-text { margin-top: 15px; color: #00d2ff; font-weight: bold; font-family: sans-serif; font-size: 16px; }
-        @keyframes pulseIcon { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        /* Неоновое кольцо прелоадера */
+        .neon-spinner {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid transparent; border-top-color: #00d2ff; border-bottom-color: #1e3a8a;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+            animation: spinNeon 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spinNeon { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .preloader-logo { position: absolute; width: 45px; height: 45px; object-fit: contain; filter: drop-shadow(0 0 15px #00d2ff); margin-bottom: 20px;}
+        .preloader-text { margin-top: 15px; color: #00d2ff; font-weight: bold; font-family: sans-serif; font-size: 16px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 210, 255, 0.8); }
     </style>
 
-    <!-- Подключаем жирные и красивые шрифты от Google (с preconnect для скорости) -->
+    <!-- Подключаем шрифты -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* Глобальный сброс коробки */
+        /* Глобальный сброс */
         *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         :root {
@@ -40,9 +44,9 @@
             --brand-primary: #00d2ff; 
             --brand-secondary: #1e3a8a; 
             
-            --blue-glass: rgba(14, 22, 40, 0.7);
-            --blue-glass-border: rgba(0, 210, 255, 0.25);
-            --blue-glow: rgba(0, 210, 255, 0.4);
+            --blue-glass: rgba(10, 15, 30, 0.5);
+            --blue-glass-border: rgba(0, 210, 255, 0.2);
+            --blue-glow: rgba(0, 210, 255, 0.3);
             
             --text-main: #f8fafc;
             --text-muted: #7b8ea8;
@@ -54,244 +58,330 @@
             --font-display: 'Montserrat', sans-serif;
             --font-body: 'Nunito', sans-serif;
             
-            --gap-sm: 8px;
-            --gap-md: 16px;
-            --gap-lg: 24px;
+            --gap-sm: 8px; --gap-md: 16px; --gap-lg: 24px;
         }
 
-        /* ИСПРАВЛЕНИЕ ФОНА и оптимизация touch-action */
         html, body {
             color: var(--text-main); font-family: var(--font-body); font-weight: 600;
-            overflow-x: hidden; min-height: 100vh; user-select: none;
-            touch-action: manipulation;
+            overflow-x: hidden; min-height: 100vh; user-select: none; touch-action: manipulation;
         }
 
-        h1, h2, h3, h4, .btn { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px; margin: 0; }
+        h1, h2, h3, h4, .modal-item-name { 
+            font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px; margin: 0; 
+            text-shadow: 0 0 15px rgba(0, 210, 255, 0.4); 
+        }
 
-        /* --- ЖИВОЙ СОВРЕМЕННЫЙ ФОН --- */
-        .modern-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--bg-base); z-index: -3; overflow: hidden; }
-        .blob { position: absolute; filter: blur(90px); opacity: 0.5; border-radius: 50%; animation: floatBlob 15s infinite alternate ease-in-out; will-change: transform; }
-        .blob-1 { top: -10%; left: -10%; width: 400px; height: 400px; background: var(--brand-secondary); }
-        .blob-2 { bottom: -10%; right: -20%; width: 500px; height: 500px; background: #005f9e; animation-delay: -5s; }
-        .blob-3 { top: 30%; left: 40%; width: 300px; height: 300px; background: var(--brand-primary); opacity: 0.3; animation-duration: 20s; }
-        @keyframes floatBlob { 0% { transform: translate3d(0, 0, 0) scale(1); } 100% { transform: translate3d(50px, 70px, 0) scale(1.15); } }
-
-        /* 3D Сетка (Cyberpunk Grid) */
-        .cyber-grid {
+        /* --- АНИМИРОВАННЫЙ ГРАДИЕНТНЫЙ ФОН (АВРОРА) --- */
+        .aurora-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-image: linear-gradient(rgba(0, 210, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.1) 1px, transparent 1px);
-            background-size: 45px 45px; z-index: -2;
-            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
-            animation: gridMove 4s linear infinite;
-            mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
-            -webkit-mask-image: radial-gradient(circle at center, black 10%, transparent 60%);
-            will-change: background-position;
+            background: linear-gradient(135deg, #060b14, #0a1628, #060b14);
+            background-size: 200% 200%; animation: auroraGradient 10s ease infinite; z-index: -4;
         }
-        @keyframes gridMove { 0% { background-position: 0 0; } 100% { background-position: 0 45px; } }
+        .aurora-wave {
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(ellipse at center, rgba(0, 210, 255, 0.04) 0%, transparent 60%);
+            animation: auroraWave 20s infinite linear; pointer-events: none;
+        }
+        @keyframes auroraGradient { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+        @keyframes auroraWave { 0% {transform: rotate(0deg)} 100% {transform: rotate(360deg)} }
 
-        @media (max-width: 768px) {
-            .blob-2, .blob-3 { display: none; }
-            .blob-1 { opacity: 0.2; width: 300px; height: 300px; }
-            .cyber-grid { animation-duration: 8s; opacity: 0.3; }
+        .screen-border {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9998;
+            box-shadow: inset 0 0 20px rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.05);
         }
 
-        .vignette { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.85) 120%); z-index: -1; pointer-events: none; }
+        /* Мягкие меняющие цвет частицы (Звёзды) */
+        #particles-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; overflow: hidden; }
+        .particle { position: absolute; border-radius: 50%; opacity: 0; }
+        @keyframes floatUpSoft { 
+            0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; background: #fff; box-shadow: 0 0 5px #fff; } 
+            50% { opacity: var(--max-opacity); background: #00d2ff; box-shadow: 0 0 12px #00d2ff; } 
+            100% { transform: translateY(-10vh) translateX(var(--drift)) scale(1.2); opacity: 0; background: #00d2ff; } 
+        }
 
+        /* МЯГКАЯ ВСПЫШКА (без белого) И ТРЯСКА */
+        #screen-flash { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            opacity: 0; z-index: 10000; pointer-events: none; mix-blend-mode: screen; 
+            transform: scale(0.8); 
+        }
+        @keyframes subtleShake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(1px, -1px); }
+            60% { transform: translate(-1px, 0); }
+            80% { transform: translate(1px, 1px); }
+        }
+        .shake-anim { animation: subtleShake 0.4s ease-in-out both; }
+
+        .vignette { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95) 130%); z-index: -1; pointer-events: none; }
+
+        /* Эффекты Glassmorphism */
         .glass-panel {
             background: var(--blue-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--blue-glass-border); border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.05); overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05); overflow: hidden; 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
         }
 
-        .coin-icon { width: 1.2em; height: 1.2em; vertical-align: -0.2em; margin-left: 2px; }
-        .item-img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); background-color: rgba(0, 210, 255, 0.05); border-radius: 12px;}
-        .case-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(0,0,0,0.6)); transition: transform 0.3s; background-color: rgba(0, 210, 255, 0.05); border-radius: 20px;}
-        .drop-item-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); background-color: rgba(0, 210, 255, 0.05); border-radius: 8px;}
+        .coin-icon { width: 1.2em; height: 1.2em; vertical-align: -0.2em; margin-left: 2px; filter: drop-shadow(0 0 6px rgba(255,204,0,0.6)); }
+        .item-img { width: 65px; height: 65px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)); background-color: rgba(0, 210, 255, 0.02); border-radius: 12px;}
+        .case-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.7)); transition: transform 0.4s ease;}
+        .drop-item-img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 4px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6)); background-color: rgba(0, 210, 255, 0.02); border-radius: 8px;}
 
         /* Верхняя панель */
         .top-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: 65px; display: flex; justify-content: space-between; align-items: center;
-            padding: 0 var(--gap-md); z-index: 100; background: rgba(6, 11, 20, 0.8); backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--blue-glass-border); box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            padding: 0 var(--gap-md); z-index: 100; background: rgba(6, 11, 20, 0.75); backdrop-filter: blur(25px);
+            border-bottom: 1px solid var(--blue-glass-border); box-shadow: 0 5px 30px rgba(0,0,0,0.7);
         }
         .top-bar-left { display: flex; align-items: center; gap: 12px; }
-        .top-bar-left img { height: 30px; border-radius: 8px; filter: drop-shadow(0 0 10px var(--blue-glow));}
-        .top-bar-left span { font-family: var(--font-display); font-weight: 900; font-size: 18px; background: linear-gradient(90deg, #fff, var(--brand-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .top-bar-left img { height: 30px; border-radius: 8px; filter: drop-shadow(0 0 8px rgba(0, 210, 255, 0.4));}
+        .top-bar-left span { font-family: var(--font-display); font-weight: 900; font-size: 18px; text-shadow: 0 0 10px rgba(255,255,255,0.4); }
         
         .balance-chip {
             background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.3);
             padding: 8px 16px; border-radius: 14px; font-weight: 900; color: var(--coin); display: flex; align-items: center; gap: 4px;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.15); transition: transform 0.2s; font-family: var(--font-display); font-size: 15px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-family: var(--font-display); font-size: 15px; text-shadow: 0 0 8px rgba(255, 204, 0, 0.4);
         }
 
-        .main-container { padding: 80px var(--gap-md) 100px var(--gap-md); }
-        .section { display: none; animation: fadeIn 0.3s ease-out; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .main-container { padding: 80px var(--gap-md) 100px var(--gap-md); position: relative; z-index: 10; }
+        
+        /* Плавные переходы вкладок */
+        .section { display: none; opacity: 0; }
+        .section.active { display: block; opacity: 1; animation: fadeInSoft 0.5s ease-out forwards; }
+        @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ПЛАВНЫЕ АНИМАЦИИ STAGGER */
+        .stagger-item { opacity: 0; transform: translateY(15px); animation: softFadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes softFadeInUp { to { opacity: 1; transform: translateY(0); } }
 
         .flex-col-16 { display: flex; flex-direction: column; gap: var(--gap-md); }
 
-        /* Сетка кейсов */
+        /* КАРТОЧКИ КЕЙСОВ */
         .cases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-md); align-items: stretch; }
         .case-card { 
             display: flex; flex-direction: column; justify-content: space-between; align-items: center; 
             padding: var(--gap-md); text-align: center; position: relative; cursor: pointer; 
-            height: 100%; min-height: 240px; gap: var(--gap-md);
+            height: 100%; min-height: 240px; gap: var(--gap-md); border: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(180deg, rgba(10, 15, 30, 0.6), rgba(6, 11, 20, 0.9));
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+        
+        /* Анимированная градиентная обводка */
+        .case-card::before {
+            content: ''; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px; z-index: -1;
+            border-radius: inherit; background: linear-gradient(60deg, var(--brand-primary), #8a2be2, var(--brand-secondary), var(--brand-primary));
+            background-size: 300% 300%; animation: borderGradient 8s linear infinite; opacity: 0.5;
+        }
+        @keyframes borderGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Глитч-линия раз в 5 сек */
+        .case-card::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 2px;
+            background: rgba(255,255,255,0.4); box-shadow: 0 0 10px #fff; transform: rotate(45deg) translateY(-100%);
+            animation: glitchLine 5s infinite; opacity: 0; pointer-events: none;
+        }
+        @keyframes glitchLine { 0%, 90% { transform: rotate(45deg) translateY(-200px); opacity: 0; } 92% { opacity: 0.5; } 95% { transform: rotate(45deg) translateY(300px); opacity: 0; } 100% { opacity: 0; } }
+
         .case-img-placeholder { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 100px; }
-        .case-card:active .case-img-placeholder { transform: scale(0.9); transition: transform 0.2s; }
+        .case-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px var(--blue-glow); }
+        .case-card:active { transform: translateY(-2px) scale(0.98); }
+        .case-card:active .case-img-placeholder { transform: scale(0.95); transition: transform 0.2s ease; }
         .case-info { width: 100%; display: flex; flex-direction: column; gap: 12px; }
         .case-info h3 { font-size: 16px; font-weight: 900; }
         
-        .case-theme-donat { border-color: rgba(255, 204, 0, 0.4); box-shadow: 0 10px 30px rgba(255, 204, 0, 0.1); }
-        .case-theme-donat h3 { color: #ffcc00; }
-        .case-theme-donat .btn { background: linear-gradient(135deg, #b8860b, #ffcc00); color: #000; text-shadow: none; }
+        .case-theme-donat h3 { color: #ffcc00; text-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
+        .case-theme-donat::before { background: linear-gradient(60deg, #ffcc00, #b8860b, #e74c3c, #ffcc00); }
+        
+        .case-theme-weapon h3 { color: #ff7675; text-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
+        .case-theme-weapon::before { background: linear-gradient(60deg, #ff4757, #b22222, #9b59b6, #ff4757); }
 
-        .case-theme-weapon { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.15); }
-        .case-theme-weapon h3 { color: #ff7675; }
-        .case-theme-weapon .btn { background: linear-gradient(135deg, #b22222, #ff4757); box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3); }
-
-        /* Кнопки */
+        /* Неоновые кнопки с Glassmorphism */
         .btn {
-            width: 100%; min-height: 48px; padding: 0 16px; border: none; border-radius: 14px; 
-            background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary));
+            font-family: var(--font-display); text-transform: uppercase;
+            width: 100%; min-height: 48px; padding: 0 16px; border-radius: 12px; border: 1px solid rgba(0, 210, 255, 0.3);
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.6), rgba(0, 210, 255, 0.4));
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             color: white; font-size: 15px; font-weight: 900; cursor: pointer; 
-            box-shadow: 0 6px 20px var(--blue-glow); transition: all 0.2s; text-shadow: 0 2px 5px rgba(0,0,0,0.4); 
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.15), inset 0 1px 0 rgba(255,255,255,0.1); 
+            transition: all 0.3s ease; text-shadow: 0 2px 6px rgba(0,0,0,0.6); 
             display: flex; flex-direction: row; justify-content: center; align-items: center; gap: var(--gap-sm);
+            position: relative; overflow: hidden;
         }
-        .btn:active { transform: scale(0.95); box-shadow: 0 2px 10px var(--blue-glow); }
-        .btn:disabled { background: #2a3441; box-shadow: none; color: #5c6b7d; text-shadow: none; pointer-events: none; opacity: 0.7;}
-        .btn-sell { background: rgba(46, 213, 115, 0.15); border: 1px solid rgba(46, 213, 115, 0.4); color: var(--success); box-shadow: none; font-size: 13px; font-family: var(--font-body); font-weight: 800; text-shadow: none; }
+        .btn:hover { box-shadow: 0 6px 20px rgba(0, 210, 255, 0.25); border-color: rgba(0, 210, 255, 0.5); }
+        .btn:active { transform: scale(0.96); box-shadow: 0 2px 10px rgba(0, 210, 255, 0.2); }
+        .btn:disabled { background: rgba(42, 52, 65, 0.4); box-shadow: none; border-color: transparent; color: #7b8ea8; pointer-events: none; }
+        
+        .btn-sell { background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); color: var(--success); box-shadow: 0 0 10px rgba(46, 213, 115, 0.1); font-size: 13px; font-family: var(--font-body); font-weight: 800; text-shadow: 0 0 5px rgba(46, 213, 115, 0.2); }
+        .btn-sell:hover { box-shadow: 0 0 15px rgba(46, 213, 115, 0.2); border-color: rgba(46, 213, 115, 0.5); }
 
-        /* Рулетка */
+        /* След от пальца (Ripple) - МЯГКИЙ */
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.2); transform: scale(0); animation: rippleAnim 0.6s ease-out; pointer-events: none; }
+        @keyframes rippleAnim { to { transform: scale(3); opacity: 0; } }
+
+        /* Пульсация цены на кнопках */
+        .price-pulse { display: inline-block; animation: pulsePriceText 2s infinite alternate ease-in-out; }
+        @keyframes pulsePriceText { 0% { text-shadow: 0 0 4px rgba(255,255,255,0.1); transform: scale(1); } 100% { text-shadow: 0 0 10px rgba(255,255,255,0.6); transform: scale(1.05); } }
+
+        /* Окно Рулетки */
         #roulette-view { text-align: center; padding: 20px 16px; position: relative; }
         .roulette-header { display: flex; align-items: center; margin-bottom: var(--gap-md); }
-        .roulette-header button { background:none; border:none; color:var(--text-muted); font-size:28px; cursor:pointer; padding: 0 10px 0 0; }
+        .roulette-header button { background:none; border:none; color:var(--brand-primary); text-shadow: 0 0 10px rgba(0,210,255,0.5); font-size:28px; cursor:pointer; padding: 0 10px 0 0; transition: 0.2s;}
+        .roulette-header button:active { transform: translateX(-4px); }
         .roulette-header h3 { margin: 0 auto; padding-right: 38px; font-size: 20px; }
 
         .multi-roulette-container { display: flex; flex-direction: column; gap: var(--gap-md); margin-bottom: var(--gap-md); max-height: 50vh; overflow-y: auto; padding-right: 5px; }
         .multi-roulette-container::-webkit-scrollbar { width: 4px; }
-        .multi-roulette-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
-        .multi-roulette-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .multi-roulette-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        .multi-roulette-container::-webkit-scrollbar-thumb { background: rgba(0, 210, 255, 0.3); border-radius: 4px; }
 
-        .roulette-wrapper { position: relative; width: 100%; height: 140px; overflow: hidden; border-radius: 16px; background: #020408; box-shadow: inset 0 0 50px rgba(0,0,0,1); border: 2px solid rgba(255,255,255,0.05); flex-shrink: 0; }
-        .roulette-wrapper::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, #020408 0%, transparent 20%, transparent 80%, #020408 100%); z-index: 5; pointer-events: none; }
-        .roulette-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; background: var(--brand-primary); box-shadow: 0 0 20px var(--brand-primary), 0 0 10px var(--brand-primary); z-index: 10; transform: translateX(-50%); border-radius: 2px; }
+        .roulette-wrapper { position: relative; width: 100%; height: 140px; overflow: hidden; border-radius: 16px; background: rgba(2,4,8,0.8); box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 0 15px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+        .roulette-wrapper::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(2,4,8,0.9) 0%, transparent 20%, transparent 80%, rgba(2,4,8,0.9) 100%); z-index: 5; pointer-events: none; }
+        .roulette-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: var(--brand-primary); box-shadow: 0 0 15px var(--brand-primary), 0 0 5px var(--brand-primary); z-index: 10; transform: translateX(-50%); border-radius: 2px; }
 
         .roulette-tape-wrapper { position: absolute; left: 50%; top: 0; height: 100%; display: flex; align-items: center; z-index: 1; }
         .roulette-tape { display: flex; align-items: center; transform: translate3d(-57.5px, 0, 0); will-change: transform; }
-        .case-item { width: 105px; height: 110px; margin: 0 5px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; font-size: 13px; font-weight: 800; text-align: center; font-family: var(--font-display); background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(0,0,0,0.95)); border: 1px solid rgba(255,255,255,0.05); border-bottom: 5px solid transparent; box-shadow: 0 5px 15px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
-        .case-item::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at top, rgba(255,255,255,0.15) 0%, transparent 60%); pointer-events: none; }
-        .item-icon { font-size: 38px; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)); }
+        .case-item { width: 105px; height: 110px; margin: 0 5px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; font-size: 13px; font-weight: 800; text-align: center; font-family: var(--font-display); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.8)); border: 1px solid rgba(255,255,255,0.02); border-bottom: 4px solid transparent; box-shadow: 0 5px 15px rgba(0,0,0,0.4); position: relative; overflow: hidden; }
+        .item-icon { font-size: 38px; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); }
 
         .fast-open-controls { display: flex; flex-direction: column; gap: var(--gap-md); width: 100%; }
-        .fast-open-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; color: var(--text-muted); cursor: pointer; user-select: none; }
-        .fast-open-toggle input[type="checkbox"] { appearance: none; width: 24px; height: 24px; background: rgba(255, 255, 255, 0.05); border: 2px solid var(--blue-glass-border); border-radius: 6px; cursor: pointer; position: relative; outline: none; transition: all 0.2s; }
-        .fast-open-toggle input[type="checkbox"]:checked { background: var(--brand-primary); border-color: var(--brand-primary); }
+        .fast-open-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; color: var(--text-main); font-weight: 700; cursor: pointer; user-select: none; }
+        .fast-open-toggle input[type="checkbox"] { appearance: none; width: 24px; height: 24px; background: rgba(0,0,0,0.3); border: 2px solid rgba(0, 210, 255, 0.4); border-radius: 6px; cursor: pointer; position: relative; outline: none; transition: all 0.3s; box-shadow: 0 0 8px rgba(0,210,255,0.1); }
+        .fast-open-toggle input[type="checkbox"]:checked { background: var(--brand-primary); box-shadow: 0 0 15px rgba(0,210,255,0.4); border-color: var(--brand-primary); }
         .fast-open-toggle input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #000; font-size: 16px; font-weight: 900; }
         .buttons-row { display: flex; gap: var(--gap-md); width: 100%; }
         .btn-half { flex: 1; flex-direction: column; gap: 2px; }
         
-        .possible-drops { margin-top: var(--gap-md); text-align: left; background: rgba(0,0,0,0.4); padding: 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
+        .possible-drops { margin-top: var(--gap-md); text-align: left; background: rgba(0,0,0,0.3); padding: 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden; }
         .drops-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
-        .drop-item { background: rgba(14, 22, 40, 0.9); border-radius: 12px; padding: 12px 5px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; border-bottom: 4px solid transparent; font-size: 12px; font-weight: 800; font-family: var(--font-display); box-shadow: 0 4px 10px rgba(0,0,0,0.3); overflow: hidden; }
+        .drop-item { background: rgba(10, 15, 30, 0.6); border-radius: 12px; padding: 12px 5px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; border-bottom: 3px solid transparent; font-size: 12px; font-weight: 800; font-family: var(--font-display); box-shadow: 0 4px 10px rgba(0,0,0,0.3); overflow: hidden; }
 
         /* --- КЛИКЕР --- */
         .clicker-box { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 24px 16px; min-height: 60vh; gap: var(--gap-md); }
         .clicker-header { text-align: center; }
         .clicker-wrapper { position: relative; width: 220px; height: 220px; display: flex; justify-content: center; align-items: center; }
-        .clicker-glow { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0, 210, 255, 0.5) 0%, transparent 70%); animation: pulseClicker 2s infinite alternate; z-index: 0; }
-        @keyframes pulseClicker { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 1; } }
-        #main-clicker { width: 100%; height: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)); transition: transform 0.05s ease-out; cursor: pointer; pointer-events: auto; -webkit-user-drag: none; will-change: transform;}
-        .floating-number { position: fixed; color: #ffcc00; font-family: var(--font-display); font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 1000; text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 15px rgba(255, 204, 0, 0.6); will-change: transform, opacity;}
-        @keyframes floatUp { 0% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } 100% { opacity: 0; transform: translate3d(0, -70px, 0) scale(1.3); } }
-        .energy-bar-container { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid var(--blue-glass-border); border-radius: 12px; height: 18px; margin-top: auto; overflow: hidden; position: relative; }
-        .energy-bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12); height: 100%; width: 100%; border-radius: 12px; transition: width 0.2s; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        .clicker-glow { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0, 210, 255, 0.3) 0%, transparent 70%); animation: pulseClickerSoft 3s infinite alternate ease-in-out; z-index: 0; pointer-events: none; }
+        @keyframes pulseClickerSoft { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 20px rgba(0, 210, 255, 0.4)); } }
+        
+        #main-clicker { width: 100%; height: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.8)); transition: transform 0.1s ease-out; cursor: pointer; pointer-events: auto; -webkit-user-drag: none; will-change: transform; animation: clickerBreathe 2s infinite alternate ease-in-out; }
+        @keyframes clickerBreathe { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        #main-clicker.click-active { animation: none; transform: scale(0.9) !important; }
+        
+        .floating-number { position: fixed; color: #ffcc00; font-family: var(--font-display); font-weight: 900; font-size: 32px; pointer-events: none; animation: floatUpClick 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; z-index: 1000; text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 12px rgba(255, 204, 0, 0.5); will-change: transform, opacity;}
+        @keyframes floatUpClick { 0% { opacity: 1; transform: translate3d(0, 0, 0) scale(0.8); } 100% { opacity: 0; transform: translate3d(0, -50px, 0) scale(1.2); } }
+        
+        .energy-bar-container { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 12px; height: 18px; margin-top: auto; overflow: hidden; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.6); }
+        .energy-bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12, #f1c40f); background-size: 200% 100%; height: 100%; width: 100%; border-radius: 12px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); animation: energyPulse 4s infinite linear; }
+        @keyframes energyPulse { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
         /* Профиль и Инвентарь */
         .profile-header { display: flex; align-items: center; gap: var(--gap-md); }
-        .profile-avatar { width: 75px; height: 75px; border-radius: 50%; background: var(--blue-glass); border: 2px solid var(--brand-primary); box-shadow: 0 0 25px var(--blue-glow); overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 35px;}
+        .profile-avatar { width: 75px; height: 75px; border-radius: 50%; background: var(--blue-glass); border: 2px solid var(--brand-primary); box-shadow: 0 0 20px rgba(0, 210, 255, 0.2); overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 35px;}
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-info h3 { margin: 0 0 8px 0; font-size: 20px; font-family: var(--font-display); }
+        .profile-info h3 { margin: 0 0 8px 0; font-size: 20px; font-family: var(--font-display); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
         .profile-info p { margin: 0; color: var(--text-muted); font-size: 14px; font-weight: 700;}
         .ref-box { display: flex; gap: var(--gap-sm); margin-top: 15px; }
-        .ref-input { flex: 1; background: rgba(0,0,0,0.6); border: 1px solid var(--blue-glass-border); color: var(--brand-primary); border-radius: 12px; padding: 0 16px; font-size: 14px; font-weight: 800; outline: none; font-family: var(--font-body); min-height: 48px; }
+        .ref-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(0, 210, 255, 0.3); color: var(--brand-primary); border-radius: 12px; padding: 0 16px; font-size: 14px; font-weight: 800; outline: none; font-family: var(--font-body); min-height: 48px; box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.05); transition: 0.3s; }
         
         .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-md); margin-top: var(--gap-md); }
-        .inv-item { padding: 12px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; font-size: 12px; font-weight: 900; background: rgba(0,0,0,0.5); font-family: var(--font-display); text-transform: uppercase; overflow: hidden; min-height: 140px; gap: var(--gap-sm); }
+        .inv-item { padding: 12px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; font-size: 12px; font-weight: 900; background: rgba(10, 15, 30, 0.5); font-family: var(--font-display); text-transform: uppercase; overflow: hidden; min-height: 140px; gap: var(--gap-sm); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; cursor: pointer; }
+        .inv-item:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 210, 255, 0.1); }
+        .inv-item:active { transform: translateY(-2px) scale(0.98); }
 
         /* Нижнее меню */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; display: flex; justify-content: space-around; align-items: center; border-radius: 30px 30px 0 0; z-index: 90; background: rgba(6, 11, 20, 0.9); backdrop-filter: blur(25px); border-top: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 800; font-family: var(--font-display); text-transform: uppercase; gap: 6px; cursor: pointer; transition: all 0.3s; height: 100%; }
-        .nav-item svg { fill: currentColor; width: 24px; height: 24px; transition: 0.3s; }
-        .nav-item.active { color: var(--text-main); transform: translateY(-4px); }
-        .nav-item.active svg { fill: var(--brand-primary); filter: drop-shadow(0 0 12px var(--blue-glow)); }
-
-        /* Модалка (общие стили) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
-        .modal-overlay.show { display: flex; opacity: 1; }
-        .modal-content { background: var(--blue-glass); border: 1px solid var(--blue-glass-border); border-radius: 24px; padding: 24px 20px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 2px 0 rgba(255, 255, 255, 0.1); transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
-        .modal-overlay.show .modal-content { transform: scale(1); }
-        .modal-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 150px; height: 150px; border-radius: 50%; filter: blur(50px); z-index: -1; opacity: 0.5; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 75px; display: flex; justify-content: space-around; align-items: center; border-radius: 30px 30px 0 0; z-index: 90; background: rgba(6, 11, 20, 0.9); backdrop-filter: blur(25px); border-top: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 5px; box-shadow: 0 -5px 25px rgba(0,0,0,0.8); }
+        .nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 10px; font-weight: 800; font-family: var(--font-display); text-transform: uppercase; gap: 6px; cursor: pointer; transition: all 0.4s ease; height: 100%; }
+        .nav-item:not(.active) svg { animation: menuPulseSoft 4s infinite alternate ease-in-out; opacity: 0.6; }
+        @keyframes menuPulseSoft { 0% { filter: drop-shadow(0 0 2px rgba(255,255,255,0.05)); transform: scale(0.95); } 100% { filter: drop-shadow(0 0 6px rgba(255,255,255,0.2)); transform: scale(1.05); opacity: 0.9; } }
         
-        /* Стили выигрыша рулетки кейсов */
-        .modal-item-img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6)); animation: pulseIcon 2s infinite alternate; }
-        .modal-item-name { font-family: var(--font-display); font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .nav-item svg { fill: currentColor; width: 24px; height: 24px; transition: 0.4s ease; z-index: 2;}
+        .nav-item.active { color: var(--brand-primary); transform: translateY(-3px); text-shadow: 0 0 10px rgba(0,210,255,0.6); }
+        .nav-item.active svg { fill: var(--brand-primary); filter: drop-shadow(0 0 12px rgba(0,210,255,0.8)); animation: none; opacity: 1; transform: scale(1.1);}
+        
+        .nav-item::before { content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; background: var(--brand-primary); filter: blur(25px); opacity: 0; transition: opacity 0.4s ease; z-index: 0; pointer-events: none;}
+        .nav-item.active::before { opacity: 0.3; }
+
+        /* Модалка с эффектом пружины */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 1000; display: none; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.4s ease; }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-content { background: rgba(10, 15, 30, 0.95); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 24px; padding: 24px 20px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 210, 255, 0.05); transform: scale(0.8); transition: transform 0.5s cubic-bezier(0.32, 1.4, 0.32, 1); position: relative; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .modal-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 180px; border-radius: 50%; filter: blur(60px); z-index: -1; opacity: 0.3; transition: background 0.5s ease; }
+        
+        /* Плавный вылет предмета (Вращение + Scale) */
+        @keyframes dropAnimSoft { 0% { transform: scale(0) rotate(-180deg); opacity: 0; } 70% { transform: scale(1.2) rotate(10deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.6)); } }
+        .item-drop-anim { animation: dropAnimSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        .modal-item-img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; opacity: 0;}
         .modal-item-price { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; display: flex; justify-content: center; align-items: center; }
         .modal-actions { display: flex; gap: var(--gap-sm); flex-direction: column; width: 100%; }
-        .btn-modal-keep { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); box-shadow: none; color: var(--text-main); flex-direction: row; }
+        .btn-modal-keep { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); box-shadow: none; color: var(--text-muted); flex-direction: row; }
 
         /* ИНТЕРАКТИВНЫЙ ТУТОРИАЛ */
-        .tut-overlay-bg {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.85); z-index: 10000; 
-            display: none; opacity: 0; transition: opacity 0.3s ease;
-            pointer-events: all; /* Блокируем клики по сайту */
-        }
-        .tut-highlight {
-            position: relative !important; z-index: 10001 !important;
-            box-shadow: 0 0 0 6px var(--brand-primary), 0 0 40px var(--brand-primary) !important;
-            border-radius: inherit; background-color: var(--bg-base);
-            pointer-events: none !important; transition: box-shadow 0.3s ease;
-        }
-        .tut-highlight::before {
-            content: '⬇️'; position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
-            font-size: 28px; filter: drop-shadow(0 0 10px var(--brand-primary));
-            animation: bounceTut 1s infinite; z-index: 10005;
-        }
-        @keyframes bounceTut { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
-        
-        .tut-message-box {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 350px; background: var(--blue-glass);
-            border: 1px solid var(--brand-primary); border-radius: 20px;
-            padding: 24px; z-index: 10002; display: none; flex-direction: column;
-            align-items: center; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-            opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        .tut-message-text { font-size: 16px; font-weight: 800; font-family: var(--font-display); line-height: 1.5; margin-bottom: 20px; color: var(--text-main); }
+        .tut-overlay-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 10000; display: none; opacity: 0; transition: opacity 0.4s ease; pointer-events: all; }
+        .tut-highlight { position: relative !important; z-index: 10001 !important; box-shadow: 0 0 0 2px rgba(0,210,255,0.5), 0 0 30px rgba(0,210,255,0.4) !important; border-radius: inherit; background-color: var(--bg-base); pointer-events: none !important; transition: box-shadow 0.4s ease; }
+        .tut-highlight::before { content: '⬇️'; position: absolute; top: -45px; left: 50%; transform: translateX(-50%); font-size: 32px; filter: drop-shadow(0 0 10px rgba(0,210,255,0.6)); animation: bounceTutSoft 1.5s infinite ease-in-out; z-index: 10005; }
+        @keyframes bounceTutSoft { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
+        .tut-message-box { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 350px; background: rgba(10, 15, 30, 0.95); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 20px; padding: 24px; z-index: 10002; display: none; flex-direction: column; align-items: center; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.8); opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateX(-50%) translateY(20px); }
+        .tut-message-box.show-anim { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .tut-message-text { font-size: 16px; font-weight: 800; font-family: var(--font-display); line-height: 1.5; margin-bottom: 20px; color: var(--text-main); text-shadow: 0 0 8px rgba(0,210,255,0.3); }
 
-        /* --- СТИЛИ АПГРЕЙДА (СИСТЕМА GAMBLE) --- */
-        #upgrade-modal .modal-content { max-width: 420px; padding: 20px; }
+        /* --- СТИЛИ АПГРЕЙДА (GAMBLE) --- */
+        #upgrade-modal .modal-content { max-width: 420px; padding: 24px 20px; }
         .upgrade-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 45vh; overflow-y: auto; padding-right: 5px; margin-top: 15px;}
         .upgrade-grid::-webkit-scrollbar { width: 4px; }
         .upgrade-grid::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
-        .upgrade-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        .upgrade-target-card { border: 2px solid transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 10px 5px; border-radius: 12px; transition: 0.2s; background: rgba(0,0,0,0.5); }
-        .upgrade-target-card.selected { border-color: var(--brand-primary); box-shadow: 0 0 15px var(--blue-glow); transform: translateY(-3px); background: rgba(0, 210, 255, 0.1); }
+        .upgrade-grid::-webkit-scrollbar-thumb { background: rgba(0,210,255,0.3); border-radius: 4px; }
+        .upgrade-target-card { border: 2px solid transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding: 12px 5px; border-radius: 14px; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; background: rgba(0,0,0,0.3); }
+        .upgrade-target-card.selected { border-color: rgba(0,210,255,0.6); box-shadow: 0 5px 15px rgba(0,210,255,0.15); transform: translateY(-3px); background: rgba(0, 210, 255, 0.05); }
         
-        /* Киберпанк Колесо Апгрейда */
-        .wheel-container { position: relative; width: 240px; height: 240px; margin: 20px auto; border-radius: 50%; padding: 8px; background: rgba(0,0,0,0.5); box-shadow: 0 0 30px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0,0,0,0.8); }
-        .wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative; overflow: hidden; }
-        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 24px solid #fff; z-index: 10; filter: drop-shadow(0 0 8px #fff); }
-        .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: var(--bg-base); border-radius: 50%; border: 2px solid var(--blue-glass-border); display: flex; justify-content: center; align-items: center; font-weight: 900; font-family: var(--font-display); z-index: 5; box-shadow: 0 0 20px rgba(0,0,0,0.9); font-size: 13px;}
+        .wheel-container { position: relative; width: 240px; height: 240px; margin: 20px auto; border-radius: 50%; padding: 6px; background: rgba(0,0,0,0.8); box-shadow: 0 0 30px rgba(0, 210, 255, 0.1), inset 0 0 20px rgba(0,0,0,0.9); }
+        .wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 25px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        .wheel-pointer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 28px solid #fff; z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)) drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
+        .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: var(--bg-base); border-radius: 50%; border: 2px solid rgba(0,210,255,0.4); display: flex; justify-content: center; align-items: center; font-weight: 900; font-family: var(--font-display); z-index: 5; box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,210,255,0.1); font-size: 14px; text-shadow: 0 0 5px rgba(0,210,255,0.6); }
         .upgrade-section { display: none; }
+        #spark-container { position: absolute; top: 50%; left: 50%; pointer-events: none; z-index: 20; overflow: visible; }
+        
+        /* Плавное растворение при проигрыше */
+        @keyframes dissolveAnim { 0% { filter: blur(0) grayscale(0); opacity: 1; transform: scale(1); } 100% { filter: blur(10px) grayscale(100%); opacity: 0; transform: scale(0.85) translateY(20px); } }
+        .dissolve-anim { animation: dissolveAnim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* КАСТОМНЫЕ УВЕДОМЛЕНИЯ */
+        .cyber-notification {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: rgba(10, 15, 30, 0.95); border: 1px solid var(--brand-primary);
+            border-radius: 14px; padding: 14px 24px; z-index: 100000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 210, 255, 0.2);
+            display: flex; align-items: center; gap: 12px;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+            opacity: 0; pointer-events: none; min-width: 250px; justify-content: center;
+        }
+        .cyber-notification.show { top: 20px; opacity: 1; }
+        .cn-text { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+        .cn-icon { font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- ЭКРАН ЗАГРУЗКИ (Появляется мгновенно) -->
+    <!-- Мягкая вспышка на весь экран -->
+    <div id="screen-flash"></div>
+    
+    <!-- Рамка киберпанк -->
+    <div class="screen-border"></div>
+    
+    <!-- Контейнер для фоновых частиц (звёзд/искр) -->
+    <div id="particles-container"></div>
+
+    <!-- Кастомное Уведомление -->
+    <div id="cyber-notification" class="cyber-notification">
+        <div class="cn-icon" id="cn-icon">🔔</div>
+        <div class="cn-text" id="cn-text">Сообщение</div>
+    </div>
+
+    <!-- ЭКРАН ЗАГРУЗКИ -->
     <div id="preloader">
+        <div class="neon-spinner"></div>
         <img src="https://playoxide.com/media/oxide-brand.png" class="preloader-logo" alt="Загрузка..." loading="lazy" decoding="async" onerror="this.onerror=null;this.src='';">
         <div class="preloader-bar-container">
             <div class="preloader-bar-fill" id="preloader-fill"></div>
@@ -299,8 +389,10 @@
         <div class="preloader-text" id="preloader-text">0%</div>
     </div>
 
-    <!-- Живой 3D Фон без багов (Градиент + Кибер сетка) -->
+    <!-- Живой Фон -->
     <div class="modern-bg">
+        <div class="aurora-wave"></div>
+        <div class="aurora-bg"></div>
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
         <div class="blob blob-3"></div>
@@ -325,24 +417,24 @@
             <div id="cases-list" class="cases-grid">
                 
                 <!-- ДОНАТ КЕЙС -->
-                <div class="case-card glass-panel case-theme-donat" id="tut-case" onclick="openRouletteView('donat')">
+                <div class="case-card case-theme-donat stagger-item" id="tut-case" style="animation-delay: 0.1s" onclick="openRouletteView('donat')">
                     <div class="case-img-placeholder">
                         <img src="DonatCase/кейс.png" class="case-img" alt="Донат Кейс" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                     </div>
                     <div class="case-info">
                         <h3>Донат Кейс</h3>
-                        <button class="btn">399 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
+                        <button class="btn"><span class="price-pulse">399</span> <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                     </div>
                 </div>
                 
                 <!-- ОРУЖЕЙНЫЙ КЕЙС -->
-                <div class="case-card glass-panel case-theme-weapon" onclick="openRouletteView('weapon')">
+                <div class="case-card case-theme-weapon stagger-item" style="animation-delay: 0.2s" onclick="openRouletteView('weapon')">
                     <div class="case-img-placeholder">
                         <img src="GunCase/оружейный кейс.png" class="case-img" alt="Оружейный Кейс" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                     </div>
                     <div class="case-info">
                         <h3>Оружейный</h3>
-                        <button class="btn">199 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
+                        <button class="btn"><span class="price-pulse">199</span> <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
                     </div>
                 </div>
 
@@ -367,14 +459,14 @@
                             ОТКРЫТЬ 1
                             <span style="font-size: 11px; font-weight: 700; display:flex; align-items:center;" id="price-x1"></span>
                         </button>
-                        <button class="btn btn-half" id="count-btn-2" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); box-shadow: none;" onclick="startOpening(2)">
+                        <button class="btn btn-half" id="count-btn-2" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,210,255,0.2); box-shadow: none;" onclick="startOpening(2)">
                             ОТКРЫТЬ x2
                             <span style="font-size: 11px; font-weight: 700; display:flex; align-items:center;" id="price-x2"></span>
                         </button>
                     </div>
                 </div>
                 
-                <div class="possible-drops">
+                <div class="possible-drops stagger-item" style="animation-delay: 0.1s">
                     <span style="font-size: 14px; font-family: var(--font-display); color: var(--brand-primary); font-weight: 900; text-transform: uppercase;">Возможный дроп:</span>
                     <div class="drops-grid" id="drops-preview"></div>
                 </div>
@@ -383,13 +475,13 @@
 
         <!-- КЛИКЕР (ЗАРАБОТОК) -->
         <div id="earn-sec" class="section">
-            <div class="glass-panel clicker-box">
+            <div class="glass-panel clicker-box stagger-item" style="animation-delay: 0.1s">
                 <div class="clicker-header">
                     <h2 style="color: var(--brand-primary); margin-bottom: 5px; font-size: 24px;">КЛИКЕР</h2>
                     <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Добывай монеты за клики</p>
                 </div>
                 
-                <div style="font-size: 36px; font-weight: 900; font-family: var(--font-display); display: flex; align-items: center; justify-content: center; text-shadow: 0 0 15px rgba(255, 204, 0, 0.4);">
+                <div style="font-size: 36px; font-weight: 900; font-family: var(--font-display); display: flex; align-items: center; justify-content: center; text-shadow: 0 0 15px rgba(255, 204, 0, 0.3);">
                     <span id="clicker-balance">0</span> <img src="Money/монеты.png" class="coin-icon" style="width: 1em; height: 1em;" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">
                 </div>
 
@@ -414,10 +506,9 @@
         <!-- КВЕСТЫ И РЕФЕРАЛКА -->
         <div id="tasks-sec" class="section">
             <div class="flex-col-16">
-                <h2 style="margin-top:0; color: var(--brand-primary);">ЗАДАНИЯ И ДРУЗЬЯ</h2>
+                <h2 style="margin-top:0; color: var(--brand-primary);" class="stagger-item">ЗАДАНИЯ И ДРУЗЬЯ</h2>
                 
-                <!-- ЕЖЕДНЕВНЫЙ БОНУС -->
-                <div class="glass-panel" id="tut-task-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="glass-panel stagger-item" id="tut-task-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; animation-delay: 0.1s">
                     <div>
                         <h4 style="margin: 0 0 8px 0; font-size: 16px;">Ежедневный бонус</h4>
                         <span style="color:var(--coin); font-size: 15px; font-family: var(--font-display); font-weight: 900; display:flex; align-items:center;">+ 300 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span>
@@ -425,8 +516,7 @@
                     <button id="daily-bonus-btn" class="btn" style="width: auto; padding: 0 20px; font-size: 12px; min-width: 130px;" onclick="claimDailyBonus()">ЗАБРАТЬ</button>
                 </div>
 
-                <!-- Задание: Подписка -->
-                <div class="glass-panel" style="padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div class="glass-panel stagger-item" style="padding: 20px; display: flex; justify-content: space-between; align-items: center; animation-delay: 0.2s">
                     <div>
                         <h4 style="margin: 0 0 8px 0; font-size: 16px;">Подписка в TG</h4>
                         <span style="color:var(--coin); font-size: 15px; font-family: var(--font-display); font-weight: 900; display:flex; align-items:center;">+ 300 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span>
@@ -434,8 +524,7 @@
                     <button id="task-sub-btn" class="btn" style="width: auto; padding: 0 20px; font-size: 12px; min-width: 130px;"></button>
                 </div>
                 
-                <!-- Реферальная система -->
-                <div class="glass-panel" style="padding: 20px;">
+                <div class="glass-panel stagger-item" style="padding: 20px; animation-delay: 0.3s">
                     <h3 style="margin: 0 0 10px 0; font-size: 18px; color: var(--brand-primary);">ПРИГЛАСИ ДРУГА</h3>
                     <p style="margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.4;">Вы получите <span style="color: var(--coin); font-family: var(--font-display); font-weight: 900;">+100 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></span> за каждого. <br>Приглашено: <span id="ref-count" style="color: #fff; font-weight: 800;">0</span></p>
                     
@@ -444,7 +533,7 @@
                         <button class="btn" id="copy-btn" style="width: auto; padding: 0 20px; font-size: 13px;" onclick="copyRef()">КОПИЯ</button>
                     </div>
                     
-                    <button class="btn" style="background: linear-gradient(135deg, #10b981, #2bad5f); margin-top: 16px; font-size: 14px;" onclick="inviteFriend()">
+                    <button class="btn" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(43, 173, 95, 0.6)); border-color: rgba(16, 185, 129, 0.4); margin-top: 16px; font-size: 14px;" onclick="inviteFriend()">
                         ПРИГЛАСИТЬ
                     </button>
                 </div>
@@ -453,7 +542,7 @@
 
         <!-- ПРОФИЛЬ И ИНВЕНТАРЬ -->
         <div id="profile-sec" class="section">
-            <div class="glass-panel" id="tut-profile-panel" style="padding: 20px; margin-bottom: 24px;">
+            <div class="glass-panel stagger-item" id="tut-profile-panel" style="padding: 20px; margin-bottom: 24px; animation-delay: 0.1s">
                 <div class="profile-header">
                     <div class="profile-avatar" id="tg-avatar">👤</div>
                     <div class="profile-info">
@@ -461,20 +550,19 @@
                         <p id="tg-username">@username</p>
                     </div>
                 </div>
-                <!-- СЧЁТЧИК КЕЙСОВ -->
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--blue-glass-border); text-align: center; font-family: var(--font-display); font-weight: 800; color: var(--brand-primary); font-size: 15px;">
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--blue-glass-border); text-align: center; font-family: var(--font-display); font-weight: 800; color: var(--brand-primary); font-size: 15px; text-shadow: 0 0 5px rgba(0,210,255,0.3);">
                     🎯 ОТКРЫТО КЕЙСОВ: <span id="cases-opened-count" style="color: #fff; font-weight: 900;">0</span>
                 </div>
             </div>
 
-            <h3 style="margin: 0 0 16px 5px; font-size: 18px;">ИНВЕНТАРЬ</h3>
+            <h3 style="margin: 0 0 16px 5px; font-size: 18px;" class="stagger-item" style="animation-delay: 0.2s">ИНВЕНТАРЬ</h3>
             <div class="inventory-grid" id="inventory">
                 <p id="empty-inv" style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 30px; font-family: var(--font-display); font-weight: 800; letter-spacing: 1px;">ИНВЕНТАРЬ ПУСТ</p>
             </div>
         </div>
     </div>
 
-    <!-- НИЖНЕЕ МЕНЮ (4 вкладки) -->
+    <!-- НИЖНЕЕ МЕНЮ -->
     <div class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('main-sec', this)">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -498,7 +586,7 @@
     <div class="modal-overlay" id="win-modal">
         <div class="modal-content" id="modal-content-box">
             <div class="modal-glow" id="modal-glow"></div>
-            <h2 id="modal-title" style="margin-top: 0; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.5);">ВЫПАЛО!</h2>
+            <h2 id="modal-title" style="margin-top: 0; color: #fff;">ВЫПАЛО!</h2>
             
             <div id="modal-dynamic-content" style="flex: 1; overflow-y: auto;">
                 <div id="single-drop-view">
@@ -512,40 +600,37 @@
                     <div class="modal-item-price" id="multi-total-price" style="margin-top: 10px; margin-bottom: 15px;">Общая стоимость: 0 <img src="Money/монеты.png" class="coin-icon" alt="монеты" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div>
                 </div>
             </div>
-            
             <div class="modal-actions" id="modal-actions-container" style="margin-top: 15px;"></div>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО АПГРЕЙДА (СИСТЕМА GAMBLE) -->
+    <!-- МОДАЛЬНОЕ ОКНО АПГРЕЙДА -->
     <div class="modal-overlay" id="upgrade-modal">
         <div class="modal-content" style="padding: 24px 15px;">
-            <button onclick="closeUpgradeModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer;">&times;</button>
-            <h2 style="margin-top: 0; color: #fff; margin-bottom: 15px;">АПГРЕЙД СКИНА</h2>
+            <button onclick="closeUpgradeModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; transition: 0.2s;">&times;</button>
+            <h2 style="margin-top: 0; color: #fff; margin-bottom: 15px; text-shadow: 0 0 12px rgba(0, 210, 255, 0.3);">АПГРЕЙД СКИНА</h2>
             
-            <!-- Этап 1: Выбор -->
             <div id="upgrade-selection-section" class="upgrade-section" style="display: block;">
                 <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 5px;">Выберите желаемый предмет:</div>
                 <div class="upgrade-grid" id="upgrade-targets-grid"></div>
                 <button class="btn" id="btn-confirm-upgrade" style="margin-top: 20px;" onclick="startUpgradeSpin()" disabled>ВЫБЕРИТЕ ПРЕДМЕТ</button>
             </div>
             
-            <!-- Этап 2: Рулетка (Вращение) -->
             <div id="upgrade-wheel-section" class="upgrade-section" style="display: none;">
                 <div class="wheel-container">
                     <div class="wheel-pointer"></div>
                     <div class="wheel" id="upgrade-wheel"></div>
                     <div class="wheel-center-dot" id="upgrade-wheel-chance">0%</div>
+                    <div id="spark-container"></div>
                 </div>
-                <div style="font-size: 14px; color: var(--text-muted); margin-top: 15px;" id="upgrade-spin-status">Крутим барабан...</div>
+                <div style="font-size: 14px; color: var(--brand-primary); margin-top: 15px; font-weight:800; text-shadow: 0 0 8px rgba(0,210,255,0.3);" id="upgrade-spin-status">Анализ вероятностей...</div>
             </div>
 
-            <!-- Этап 3: Результат -->
             <div id="upgrade-result-section" class="upgrade-section" style="display: none;">
                 <div id="upgrade-res-icon" style="margin: 20px 0; height: 100px; display: flex; justify-content: center; align-items: center;"></div>
                 <h2 id="upgrade-res-title" style="margin: 0; font-size: 24px;">РЕЗУЛЬТАТ</h2>
                 <div id="upgrade-res-msg" style="color: var(--text-muted); font-size: 14px; margin-top: 10px; margin-bottom: 20px;"></div>
-                <button class="btn" onclick="closeUpgradeModal()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); box-shadow: none;">ОТЛИЧНО</button>
+                <button class="btn" onclick="closeUpgradeModal()">ОТЛИЧНО</button>
             </div>
         </div>
     </div>
@@ -559,35 +644,62 @@
 
     <!-- ОСНОВНОЙ СКРИПТ -->
     <script>
-        // Запускаем таймер прелоадера СРАЗУ, не дожидаясь DOM
         const preloaderStartTime = Date.now();
 
-        // --- 1. LOCAL STORAGE И СОСТОЯНИЕ (БЭКЕНД) ---
-        let balance = 15000; 
-        let inventoryItems = [];
-        let wonItemsArray = []; 
-        let energy = 100;
-        const maxEnergy = 100;
-        let referralsCount = 0;
-        let taskSubState = 'start'; 
-        
-        let casesOpened = 0;
-        let lastEnergyUpdate = Date.now();
-        let dailyBonus = 0;
-        let tutorialCompleted = false;
+        // Анимация фоновых частиц с мягкой сменой цвета и размеров
+        document.addEventListener("DOMContentLoaded", () => {
+            const pContainer = document.getElementById('particles-container');
+            const particleCount = 45;
+            for(let i = 0; i < particleCount; i++) {
+                let p = document.createElement('div'); p.className = 'particle';
+                let isLarge = Math.random() > 0.85; // 15% крупных частиц
+                let size = isLarge ? (Math.random() * 4 + 6) : (Math.random() * 3 + 1.5);
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.filter = isLarge ? 'blur(2px)' : 'none';
+                p.style.setProperty('--duration', (Math.random() * 15 + (isLarge ? 20 : 10)) + 's');
+                p.style.setProperty('--drift', (Math.random() * 80 - 40) + 'px');
+                p.style.setProperty('--max-opacity', (Math.random() * 0.4 + 0.15));
+                p.style.animationDelay = (Math.random() * 20) + 's';
+                p.style.animation = `floatUpSoft var(--duration) infinite linear`;
+                pContainer.appendChild(p);
+            }
+        });
+
+        // Эффект Ripple (Мягкая волна на кнопках)
+        document.body.addEventListener('pointerdown', (e) => {
+            const btn = e.target.closest('.btn');
+            if (btn && !btn.disabled) {
+                const rect = btn.getBoundingClientRect();
+                const ripple = document.createElement('div'); ripple.className = 'ripple';
+                ripple.style.left = `${e.clientX - rect.left}px`; ripple.style.top = `${e.clientY - rect.top}px`;
+                btn.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            }
+        });
+
+        // Кастомное Уведомление
+        function showNotification(msg, type = 'success') {
+            const notif = document.getElementById('cyber-notification');
+            const icon = document.getElementById('cn-icon');
+            const text = document.getElementById('cn-text');
+            
+            if(type === 'success') { icon.innerText = '✅'; notif.style.borderColor = 'var(--success)'; notif.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(46, 213, 115, 0.2)'; }
+            else if(type === 'error') { icon.innerText = '❌'; notif.style.borderColor = 'var(--danger)'; notif.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(255, 71, 87, 0.2)'; }
+            else { icon.innerText = '🔔'; notif.style.borderColor = 'var(--brand-primary)'; notif.style.boxShadow = '0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(0, 210, 255, 0.2)'; }
+            
+            text.innerHTML = msg;
+            notif.classList.add('show');
+            setTimeout(() => { notif.classList.remove('show'); }, 3000);
+        }
+
+        // --- 1. LOCAL STORAGE И СОСТОЯНИЕ ---
+        let balance = 15000; let inventoryItems = []; let wonItemsArray = []; 
+        let energy = 100; const maxEnergy = 100; let referralsCount = 0; let taskSubState = 'start'; 
+        let casesOpened = 0; let lastEnergyUpdate = Date.now(); let dailyBonus = 0; let tutorialCompleted = false;
 
         function saveState() {
-            const state = {
-                balance: balance,
-                inventory: inventoryItems,
-                energy: energy,
-                referrals: referralsCount,
-                taskSub: taskSubState,
-                casesOpened: casesOpened,
-                lastEnergyUpdate: lastEnergyUpdate,
-                dailyBonus: dailyBonus,
-                tutorialCompleted: tutorialCompleted
-            };
+            const state = { balance, inventory: inventoryItems, energy, referrals: referralsCount, taskSub: taskSubState, casesOpened, lastEnergyUpdate, dailyBonus, tutorialCompleted };
             localStorage.setItem('oxideDropState', JSON.stringify(state));
         }
 
@@ -596,89 +708,47 @@
             if (saved) {
                 try {
                     const state = JSON.parse(saved);
-                    balance = state.balance !== undefined ? state.balance : 15000;
-                    inventoryItems = state.inventory || [];
-                    if (state.energy !== undefined) energy = state.energy;
-                    referralsCount = state.referrals || 0;
-                    taskSubState = state.taskSub || 'start';
-                    casesOpened = state.casesOpened || 0;
-                    lastEnergyUpdate = state.lastEnergyUpdate || Date.now();
-                    dailyBonus = state.dailyBonus || 0;
+                    balance = state.balance ?? 15000; inventoryItems = state.inventory || [];
+                    energy = state.energy ?? energy; referralsCount = state.referrals || 0;
+                    taskSubState = state.taskSub || 'start'; casesOpened = state.casesOpened || 0;
+                    lastEnergyUpdate = state.lastEnergyUpdate || Date.now(); dailyBonus = state.dailyBonus || 0;
                     tutorialCompleted = state.tutorialCompleted || false;
                 } catch(e) {}
             }
-            
-            // Восстановление энергии
             const now = Date.now();
             if (energy < maxEnergy) {
-                const diffMs = now - lastEnergyUpdate;
-                const energyToAdd = Math.floor(diffMs / 36000);
-                if (energyToAdd > 0) {
-                    energy = Math.min(maxEnergy, energy + energyToAdd);
-                    lastEnergyUpdate = now - (diffMs % 36000);
-                }
-            } else {
-                lastEnergyUpdate = now;
-            }
+                const diffMs = now - lastEnergyUpdate; const energyToAdd = Math.floor(diffMs / 36000);
+                if (energyToAdd > 0) { energy = Math.min(maxEnergy, energy + energyToAdd); lastEnergyUpdate = now - (diffMs % 36000); }
+            } else { lastEnergyUpdate = now; }
             saveState();
         }
 
-        // --- 2. ПРЕЛОАДЕР И КЭШИРОВАНИЕ ---
+        // --- 2. ПРЕЛОАДЕР ---
         document.addEventListener("DOMContentLoaded", () => {
             loadState(); 
-            
-            const criticalImages = [
-                'https://playoxide.com/media/oxide-brand.png',
-                'Clicer/кликер.png',
-                'DonatCase/кейс.png',
-                'GunCase/оружейный кейс.png',
-                'Money/монеты.png'
-            ];
-
-            let loadedCount = 0;
-            const totalImages = criticalImages.length;
-            const progressFill = document.getElementById('preloader-fill');
-            const progressText = document.getElementById('preloader-text');
-            const preloader = document.getElementById('preloader');
+            const criticalImages = ['https://playoxide.com/media/oxide-brand.png', 'Clicer/кликер.png', 'DonatCase/кейс.png', 'GunCase/оружейный кейс.png', 'Money/монеты.png'];
+            let loadedCount = 0; const totalImages = criticalImages.length;
+            const progressFill = document.getElementById('preloader-fill'); const progressText = document.getElementById('preloader-text'); const preloader = document.getElementById('preloader');
 
             function finishPreloader() {
-                const elapsed = Date.now() - preloaderStartTime;
-                const minTime = 1500; 
-                const delay = elapsed < minTime ? minTime - elapsed : 0;
-
+                const elapsed = Date.now() - preloaderStartTime; const minTime = 1000; const delay = elapsed < minTime ? minTime - elapsed : 0;
                 setTimeout(() => {
-                    preloader.style.opacity = '0';
-                    preloader.style.visibility = 'hidden';
-                    setTimeout(() => { preloader.style.display = 'none'; }, 500);
-                    
-                    updateBalanceUI(0);
-                    updateEnergyUI();
-                    renderInventory();
-                    renderTaskSub();
-                    renderDailyBonus();
+                    preloader.style.opacity = '0'; preloader.style.visibility = 'hidden';
+                    setTimeout(() => { preloader.style.display = 'none'; }, 800);
+                    updateBalanceUI(0); updateEnergyUI(); renderInventory(); renderTaskSub(); renderDailyBonus();
                     document.getElementById('ref-count').innerText = referralsCount;
                     document.getElementById('cases-opened-count').innerText = casesOpened;
-                    
-                    if (!tutorialCompleted) {
-                        setTimeout(startInteractiveTutorial, 500);
-                    }
+                    if (!tutorialCompleted) setTimeout(startInteractiveTutorial, 500);
                 }, delay);
             }
 
             if(totalImages === 0) { finishPreloader(); return; }
-
             criticalImages.forEach(src => {
-                const img = new Image();
-                img.onload = updateProgress;
-                img.onerror = updateProgress; 
-                img.src = src;
+                const img = new Image(); img.onload = updateProgress; img.onerror = updateProgress; img.src = src;
             });
-
             function updateProgress() {
-                loadedCount++;
-                const percent = Math.round((loadedCount / totalImages) * 100);
-                progressFill.style.width = percent + '%';
-                progressText.innerText = percent + '%';
+                loadedCount++; const percent = Math.round((loadedCount / totalImages) * 100);
+                progressFill.style.width = percent + '%'; progressText.innerText = percent + '%';
                 if (loadedCount === totalImages) finishPreloader(); 
             }
         });
@@ -694,335 +764,252 @@
         ];
 
         function startInteractiveTutorial() {
-            document.getElementById('tut-overlay-bg').style.display = 'block';
-            document.getElementById('tut-message-box').style.display = 'flex';
-            setTimeout(() => {
-                document.getElementById('tut-overlay-bg').style.opacity = '1';
-                document.getElementById('tut-message-box').style.opacity = '1';
-            }, 10);
+            document.getElementById('tut-overlay-bg').style.display = 'block'; document.getElementById('tut-message-box').style.display = 'flex';
+            setTimeout(() => { document.getElementById('tut-overlay-bg').style.opacity = '1'; document.getElementById('tut-message-box').classList.add('show-anim'); }, 10);
             renderInteractiveStep();
         }
 
         function renderInteractiveStep() {
             document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-            
             const step = tutStepsInteractive[currentInteractiveStep];
-            
             if (step.tabIdx !== undefined) {
                 const navItems = document.querySelectorAll('.nav-item');
-                if(navItems[step.tabIdx]) { navItems[step.tabIdx].click(); }
+                if(navItems[step.tabIdx]) navItems[step.tabIdx].click(); 
             }
-            
             document.getElementById('tut-int-text').innerText = step.text;
-            
             const btn = document.getElementById('tut-int-btn');
-            if (currentInteractiveStep === tutStepsInteractive.length - 1) {
-                btn.innerText = "ВСЁ ПОНЯТНО!";
-            } else {
-                btn.innerText = "ДАЛЕЕ →";
-            }
-            
+            btn.innerText = currentInteractiveStep === tutStepsInteractive.length - 1 ? "ВСЁ ПОНЯТНО!" : "ДАЛЕЕ →";
             if (step.target) {
-                setTimeout(() => {
-                    const el = document.getElementById(step.target);
-                    if (el) el.classList.add('tut-highlight');
-                }, 200); 
+                setTimeout(() => { const el = document.getElementById(step.target); if (el) el.classList.add('tut-highlight'); }, 200); 
             }
         }
 
         function nextInteractiveStep() {
             if (currentInteractiveStep < tutStepsInteractive.length - 1) {
-                currentInteractiveStep++;
-                renderInteractiveStep();
+                currentInteractiveStep++; renderInteractiveStep();
             } else {
-                document.getElementById('tut-overlay-bg').style.opacity = '0';
-                document.getElementById('tut-message-box').style.opacity = '0';
+                document.getElementById('tut-overlay-bg').style.opacity = '0'; document.getElementById('tut-message-box').classList.remove('show-anim');
                 document.querySelectorAll('.tut-highlight').forEach(el => el.classList.remove('tut-highlight'));
-                
-                setTimeout(() => {
-                    document.getElementById('tut-overlay-bg').style.display = 'none';
-                    document.getElementById('tut-message-box').style.display = 'none';
-                }, 400);
-                
-                tutorialCompleted = true;
-                saveState();
-                
+                setTimeout(() => { document.getElementById('tut-overlay-bg').style.display = 'none'; document.getElementById('tut-message-box').style.display = 'none'; }, 400);
+                tutorialCompleted = true; saveState();
                 document.querySelectorAll('.nav-item')[0].click();
             }
         }
 
         // --- ЛОГИКА ДНЕВНОГО БОНУСА ---
         function renderDailyBonus() {
-            const btn = document.getElementById('daily-bonus-btn');
-            const now = Date.now();
-            const msIn24h = 86400000;
-            if (now - dailyBonus >= msIn24h) {
-                btn.innerText = 'ЗАБРАТЬ';
-                btn.disabled = false;
-                btn.style.opacity = '1';
-            } else {
-                btn.innerText = 'ПОЛУЧЕН';
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-            }
+            const btn = document.getElementById('daily-bonus-btn'); const now = Date.now();
+            if (now - dailyBonus >= 86400000) { btn.innerText = 'ЗАБРАТЬ'; btn.disabled = false; btn.style.opacity = '1'; } 
+            else { btn.innerText = 'ПОЛУЧЕН'; btn.disabled = true; btn.style.opacity = '0.5'; }
         }
-
         function claimDailyBonus() {
             const now = Date.now();
             if (now - dailyBonus >= 86400000) {
-                updateBalanceUI(300);
-                dailyBonus = now;
-                saveState();
-                renderDailyBonus();
+                updateBalanceUI(300); dailyBonus = now; saveState(); renderDailyBonus();
+                showNotification('Ежедневный бонус +300 монет!', 'success');
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             }
         }
 
-        // --- 3. ИНИЦИАЛИЗАЦИЯ TELEGRAM И РЕФЕРАЛЫ ---
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        let botUsername = "OxideDropBot"; 
-        const user = tg.initDataUnsafe?.user;
-        const refLinkInput = document.getElementById('ref-link');
+        // --- 3. ИНИЦИАЛИЗАЦИЯ TELEGRAM ---
+        const tg = window.Telegram.WebApp; tg.expand();
+        let botUsername = "OxideDropBot"; const user = tg.initDataUnsafe?.user; const refLinkInput = document.getElementById('ref-link');
 
         if (user) {
-            const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            document.getElementById('tg-name').innerText = fullName;
+            document.getElementById('tg-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
             document.getElementById('tg-username').innerText = user.username ? '@' + user.username : 'Игрок';
             if (user.photo_url) document.getElementById('tg-avatar').innerHTML = `<img src="${user.photo_url}" loading="lazy" decoding="async" alt="avatar" onerror="this.onerror=null;this.src='';">`;
             refLinkInput.value = `https://t.me/${botUsername}?start=ref_${user.id}`;
-        } else {
-            refLinkInput.value = `https://t.me/${botUsername}?start=ref_test123`;
-        }
+        } else { refLinkInput.value = `https://t.me/${botUsername}?start=ref_test123`; }
 
         const startParam = tg.initDataUnsafe?.start_param;
-        if (startParam && startParam.startsWith('ref_')) {
-            if (!localStorage.getItem('oxideJoinedRef')) {
-                setTimeout(() => {
-                    updateBalanceUI(100);
-                    localStorage.setItem('oxideJoinedRef', 'true');
-                    tg.showAlert('🎁 Вы получили бонус +100 монет за переход по приглашению!');
-                }, 1000);
-            }
+        if (startParam && startParam.startsWith('ref_') && !localStorage.getItem('oxideJoinedRef')) {
+            setTimeout(() => { updateBalanceUI(100); localStorage.setItem('oxideJoinedRef', 'true'); showNotification('🎁 Бонус +100 монет за приглашение!', 'success'); }, 1000);
         }
 
         function copyRef() {
-            refLinkInput.select();
-            document.execCommand('copy');
-            const btn = document.getElementById('copy-btn');
-            btn.innerText = 'Успешно!';
-            btn.style.background = 'var(--success)';
+            refLinkInput.select(); document.execCommand('copy'); const btn = document.getElementById('copy-btn');
+            btn.innerText = 'Успешно!'; btn.style.background = 'rgba(46, 213, 115, 0.4)';
             setTimeout(() => { btn.innerText = 'КОПИЯ'; btn.style.background = ''; }, 2000);
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
 
-        function inviteFriend() {
-            const link = refLinkInput.value;
-            const text = 'Залетай в Oxide Drop и получай бонусы!';
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-            window.Telegram.WebApp.openTelegramLink(shareUrl);
-        }
+        function inviteFriend() { window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLinkInput.value)}&text=${encodeURIComponent('Залетай в Oxide Drop и получай бонусы!')}`); }
 
-        function simulateFriendJoin() {
-            referralsCount++;
-            document.getElementById('ref-count').innerText = referralsCount;
-            updateBalanceUI(100);
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            tg.showAlert('🎉 По вашей ссылке зарегистрировался друг! Вам начислено +100 монет');
-        }
-
-        // --- 4. ЗАДАНИЕ ПОДПИСКА ---
         function renderTaskSub() {
             const btn = document.getElementById('task-sub-btn');
             if (taskSubState === 'start') {
-                btn.innerText = 'ВЫПОЛНИТЬ';
-                btn.disabled = false;
-                btn.onclick = () => {
-                    window.Telegram.WebApp.openTelegramLink('https://t.me/OxideDrop');
-                    taskSubState = 'pending';
-                    saveState();
-                    renderTaskSub();
-                    setTimeout(() => {
-                        if (taskSubState === 'pending') {
-                            taskSubState = 'ready';
-                            saveState();
-                            renderTaskSub();
-                        }
-                    }, 5000);
-                };
-            } else if (taskSubState === 'pending') {
-                btn.innerText = 'ПРОВЕРКА...';
-                btn.disabled = true;
-                btn.onclick = null;
+                btn.innerText = 'ВЫПОЛНИТЬ'; btn.disabled = false;
+                btn.onclick = () => { window.Telegram.WebApp.openTelegramLink('https://t.me/OxideDrop'); taskSubState = 'pending'; saveState(); renderTaskSub(); setTimeout(() => { if (taskSubState === 'pending') { taskSubState = 'ready'; saveState(); renderTaskSub(); } }, 5000); };
+            } else if (taskSubState === 'pending') { btn.innerText = 'ПРОВЕРКА...'; btn.disabled = true; btn.onclick = null;
             } else if (taskSubState === 'ready') {
-                btn.innerText = 'ПРОВЕРИТЬ';
-                btn.disabled = false;
-                btn.onclick = () => {
-                    updateBalanceUI(300);
-                    taskSubState = 'done';
-                    saveState();
-                    renderTaskSub();
-                    if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                };
-            } else if (taskSubState === 'done') {
-                btn.innerText = 'ВЫПОЛНЕНО';
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.onclick = null;
-            }
+                btn.innerText = 'ПРОВЕРИТЬ'; btn.disabled = false;
+                btn.onclick = () => { updateBalanceUI(300); taskSubState = 'done'; saveState(); renderTaskSub(); showNotification('Задание выполнено!', 'success'); if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); };
+            } else if (taskSubState === 'done') { btn.innerText = 'ВЫПОЛНЕНО'; btn.disabled = true; btn.style.opacity = '0.5'; btn.onclick = null; }
         }
 
-        // --- 5. БАЛАНС И ОБНОВЛЕНИЕ UI ---
         const balanceBox = document.getElementById('global-balance');
         function updateBalanceUI(change = 0) {
-            balance += change;
-            saveState();
-            
-            const balVal = document.getElementById('balance-val');
-            if (balVal) balVal.innerText = balance;
-            
-            const clickerBal = document.getElementById('clicker-balance');
-            if (clickerBal) clickerBal.innerText = balance;
-
+            balance += change; saveState();
+            const balVal = document.getElementById('balance-val'); if (balVal) balVal.innerText = balance;
+            const clickerBal = document.getElementById('clicker-balance'); if (clickerBal) clickerBal.innerText = balance;
             if (change !== 0) {
-                balanceBox.style.transform = change > 0 ? 'scale(1.15)' : 'scale(0.9)';
-                balanceBox.style.borderColor = change > 0 ? 'var(--success)' : 'var(--danger)';
-                setTimeout(() => {
-                    balanceBox.style.transform = 'scale(1)';
-                    balanceBox.style.borderColor = 'rgba(255, 204, 0, 0.3)';
-                }, 300);
+                balanceBox.style.transform = change > 0 ? 'scale(1.15)' : 'scale(0.9)'; balanceBox.style.borderColor = change > 0 ? 'var(--success)' : 'var(--danger)';
+                setTimeout(() => { balanceBox.style.transform = 'scale(1)'; balanceBox.style.borderColor = 'rgba(255, 204, 0, 0.3)'; }, 300);
             }
         }
 
-        // --- 6. АУДИО (ЗВУКИ) ---
+        // --- 6. МЯГКОЕ АУДИО (WEB AUDIO API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playTick() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            const filter = audioCtx.createBiquadFilter();
-            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.04);
-            filter.type = 'bandpass'; filter.frequency.value = 1200;
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
-            osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        let bgAtmosStarted = false;
+
+        function startBgAtmos() { // Тёплый киберпанк-гул
+            if(bgAtmosStarted || audioCtx.state === 'suspended') return;
+            bgAtmosStarted = true;
+            const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain(); const lfo = audioCtx.createOscillator(); const lfoGain = audioCtx.createGain();
+            osc1.type = 'sine'; osc1.frequency.value = 55; osc2.type = 'triangle'; osc2.frequency.value = 55.5; 
+            lfo.type = 'sine'; lfo.frequency.value = 0.1; lfoGain.gain.value = 0.005; lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+            gain.gain.value = 0.015; osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
+            osc1.start(); osc2.start(); lfo.start();
         }
 
-        function playWin() {
+        function playSoftClick() { // Мягкий тап
+            if (audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); const filter = audioCtx.createBiquadFilter();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.04);
+            filter.type = 'lowpass'; filter.frequency.value = 800;
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+        }
+
+        function playMechanicalUnlock() { // Механический звук перед бумом
+            if (audioCtx.state === 'suspended') return;
+            const now = audioCtx.currentTime;
+            
+            // Шум механизма
+            const oscNoise = audioCtx.createOscillator(); const gainNoise = audioCtx.createGain();
+            oscNoise.type = 'sawtooth'; oscNoise.frequency.setValueAtTime(50, now); oscNoise.frequency.linearRampToValueAtTime(10, now + 0.3);
+            gainNoise.gain.setValueAtTime(0, now); gainNoise.gain.linearRampToValueAtTime(0.1, now + 0.1); gainNoise.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            oscNoise.connect(gainNoise); gainNoise.connect(audioCtx.destination); oscNoise.start(now); oscNoise.stop(now + 0.3);
+
+            // Глубокий БУМ (вместо взрыва)
+            const oscBoom = audioCtx.createOscillator(); const gainBoom = audioCtx.createGain();
+            oscBoom.type = 'sine'; oscBoom.frequency.setValueAtTime(120, now + 0.1); oscBoom.frequency.exponentialRampToValueAtTime(20, now + 0.7);
+            gainBoom.gain.setValueAtTime(0, now + 0.1); gainBoom.gain.linearRampToValueAtTime(0.6, now + 0.15); gainBoom.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+            oscBoom.connect(gainBoom); gainBoom.connect(audioCtx.destination); oscBoom.start(now + 0.1); oscBoom.stop(now + 0.9);
+
+            // Металлический звон
+            const oscRing = audioCtx.createOscillator(); const gainRing = audioCtx.createGain();
+            oscRing.type = 'sine'; oscRing.frequency.setValueAtTime(800, now + 0.15); oscRing.frequency.exponentialRampToValueAtTime(400, now + 0.8);
+            gainRing.gain.setValueAtTime(0, now + 0.15); gainRing.gain.linearRampToValueAtTime(0.05, now + 0.2); gainRing.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            oscRing.connect(gainRing); gainRing.connect(audioCtx.destination); oscRing.start(now + 0.15); oscRing.stop(now + 0.9);
+        }
+
+        function playWinDrop(isRare) { 
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const notes = [523.25, 659.25, 783.99, 1046.50];
+            const now = audioCtx.currentTime;
+            
+            // Базовый радостный аккорд
+            const notes = [523.25, 659.25, 783.99]; 
             notes.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
                 osc.type = 'sine'; osc.frequency.value = freq;
-                const start = audioCtx.currentTime + (i * 0.08);
-                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.2, start + 0.05);
-                gain.gain.exponentialRampToValueAtTime(0.01, start + 0.6);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(start); osc.stop(start + 0.6);
+                const start = now + (i * 0.05);
+                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.15, start + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, start + 0.6);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start + 0.6);
             });
+
+            if (isRare) {
+                // Золотые высокие переливы
+                const rareNotes = [1046.50, 1318.51, 1567.98, 2093.00];
+                rareNotes.forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq;
+                    const start = now + 0.1 + (i * 0.04);
+                    gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.1, start + 0.02); gain.gain.exponentialRampToValueAtTime(0.01, start + 0.4);
+                    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start + 0.4);
+                });
+            }
+        }
+
+        function playGambleBet() { 
+            if (audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            const lfo = audioCtx.createOscillator(); const lfoGain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 3.5);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 3.5); gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 4.0);
+            lfo.type = 'sine'; lfo.frequency.setValueAtTime(5, audioCtx.currentTime); lfo.frequency.linearRampToValueAtTime(15, audioCtx.currentTime + 3.5); 
+            lfoGain.gain.value = 10; lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); lfo.start(); osc.stop(audioCtx.currentTime + 4.0); lfo.stop(audioCtx.currentTime + 4.0);
+        }
+
+        function playGambleResult(isWin) {
+            if (audioCtx.state === 'suspended') return;
+            const now = audioCtx.currentTime;
+            if (isWin) {
+                [440, 554.37, 659.25, 880].forEach((freq, i) => {
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.type = 'triangle'; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.15, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+                    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 1.0);
+                });
+            } else {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.8);
+                gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.3, now + 0.1); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.8);
+            }
+        }
+
+        function playTickSoft() { 
+            if (audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); const filter = audioCtx.createBiquadFilter();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.02);
+            filter.type = 'bandpass'; filter.frequency.value = 1000;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+            osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.02);
         }
         
         function playSellSound() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (audioCtx.state === 'suspended') return;
             const notes = [1200, 1600];
             notes.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine'; osc.frequency.value = freq;
-                const start = audioCtx.currentTime + (i * 0.08);
-                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.01, start + 0.3);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(start); osc.stop(start + 0.3);
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.value = freq; const start = audioCtx.currentTime + (i * 0.08);
+                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.1, start + 0.02); gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(start); osc.stop(start + 0.3);
             });
         }
 
-        function playTapSound() {
+        document.body.addEventListener('pointerdown', (e) => {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-        }
-
-        function playFastOpenSound() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const notes = [440, 554, 659];
-            notes.forEach((freq, i) => {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'triangle'; osc.frequency.value = freq;
-                const start = audioCtx.currentTime + (i * 0.05);
-                gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.1, start + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.01, start + 0.3);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(start); osc.stop(start + 0.3);
-            });
-        }
+            startBgAtmos();
+            if (e.target.closest('.btn') || e.target.closest('.case-card') || e.target.closest('.nav-item')) playSoftClick();
+        });
 
         // --- 7. ЛОГИКА КЛИКЕРА ---
-        const energyText = document.getElementById('energy-text');
-        const energyFill = document.getElementById('energy-fill');
-        const clickerImg = document.getElementById('main-clicker');
-
-        function updateEnergyUI() {
-            energyText.innerText = `${energy} / ${maxEnergy}`;
-            energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
-        }
+        const energyText = document.getElementById('energy-text'); const energyFill = document.getElementById('energy-fill'); const clickerImg = document.getElementById('main-clicker');
+        function updateEnergyUI() { energyText.innerText = `${energy} / ${maxEnergy}`; energyFill.style.width = `${(energy / maxEnergy) * 100}%`; }
 
         function handleTap(e) {
             e.preventDefault();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (energy <= 0) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
             
-            if (energy <= 0) {
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-                return;
-            }
+            // Вдавливание (переопределяем анимацию)
+            clickerImg.classList.add('click-active'); setTimeout(() => clickerImg.classList.remove('click-active'), 100);
+            
+            energy--; updateEnergyUI(); updateBalanceUI(1); saveState(); 
+            playSoftClick(); if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 
-            clickerImg.style.transform = 'scale(0.92)';
-            setTimeout(() => clickerImg.style.transform = 'scale(1)', 100);
-
-            energy--;
-            updateEnergyUI();
-            updateBalanceUI(1);
-            saveState(); 
-            
-            playTapSound();
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-
-            const floatEl = document.createElement('div');
-            floatEl.classList.add('floating-number');
-            floatEl.innerText = '+1';
-            
-            let clientX = e.clientX;
-            let clientY = e.clientY;
-            if (e.touches && e.touches.length > 0) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            }
-            
-            const randomX = (Math.random() - 0.5) * 40;
-            floatEl.style.left = `${clientX - 15 + randomX}px`;
-            floatEl.style.top = `${clientY - 20}px`;
-            document.body.appendChild(floatEl);
-            setTimeout(() => floatEl.remove(), 800);
+            const floatEl = document.createElement('div'); floatEl.classList.add('floating-number'); floatEl.innerText = '+1';
+            let clientX = e.clientX; let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            floatEl.style.left = `${clientX - 15 + (Math.random() - 0.5) * 40}px`; floatEl.style.top = `${clientY - 20}px`;
+            document.body.appendChild(floatEl); setTimeout(() => floatEl.remove(), 800);
         }
-
-        setInterval(() => {
-            if (energy < maxEnergy) {
-                energy++;
-                updateEnergyUI();
-            }
-            lastEnergyUpdate = Date.now();
-            saveState();
-        }, 36000); 
+        setInterval(() => { if (energy < maxEnergy) { energy++; updateEnergyUI(); } lastEnergyUpdate = Date.now(); saveState(); }, 36000); 
 
         // --- 8. БАЗА ПРЕДМЕТОВ И РУЛЕТКА ---
         const allItems = {
@@ -1030,7 +1017,6 @@
             buggy: { name: 'Багги', img: 'DonatCase/багги.png', color: '#00d2ff', price: 400, isCurrency: false },
             turret: { name: 'Турель', img: 'DonatCase/турель.png', color: '#a0aec0', price: 200, isCurrency: false },
             quarry: { name: 'Карьер', img: 'DonatCase/карьер.png', color: '#ffcc00', price: 1200, isCurrency: false },
-            
             thompson: { name: 'Томпсон', img: 'GunCase/томпсон.png', color: '#00fa9a', price: 90, isCurrency: false },
             rifle: { name: 'Винтовка', img: 'GunCase/винтовка.png', color: '#9d4edd', price: 250, isCurrency: false },
             berdanka: { name: 'Берданка', img: 'GunCase/берданка.png', color: '#00d2ff', price: 170, isCurrency: false },
@@ -1039,86 +1025,49 @@
         };
 
         const casesConfig = {
-            donat: { name: 'Донат Кейс', price: 399, theme: '#ffcc00', pool: [
-                { item: allItems.turret, chance: 45 },
-                { item: allItems.buggy, chance: 25 },
-                { item: allItems.copter, chance: 20 },
-                { item: allItems.quarry, chance: 10 }
-            ]},
-            weapon: { name: 'Оружейный Кейс', price: 199, theme: '#ff4757', pool: [
-                { item: allItems.thompson, chance: 40 }, 
-                { item: allItems.berdanka, chance: 25 },
-                { item: allItems.rifle, chance: 20 }, 
-                { item: allItems.kalash, chance: 15 },
-                { item: allItems.coins_200, chance: 10 }
-            ]}
+            donat: { name: 'Донат Кейс', price: 399, theme: '#ffcc00', pool: [{ item: allItems.turret, chance: 45 }, { item: allItems.buggy, chance: 25 }, { item: allItems.copter, chance: 20 }, { item: allItems.quarry, chance: 10 }]},
+            weapon: { name: 'Оружейный Кейс', price: 199, theme: '#ff4757', pool: [{ item: allItems.thompson, chance: 40 }, { item: allItems.berdanka, chance: 25 }, { item: allItems.rifle, chance: 20 }, { item: allItems.kalash, chance: 15 }, { item: allItems.coins_200, chance: 10 }]}
         };
 
-        let activeCaseId = null;
-        let isSpinning = false;
-        const ITEM_WIDTH = 115; 
-        
+        let activeCaseId = null; let isSpinning = false; const ITEM_WIDTH = 115; 
         function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
 
         function setButtonsState(disabled) {
             document.getElementById('spin-btn').disabled = disabled;
             document.getElementById('count-btn-2').disabled = disabled;
             document.getElementById('fast-open-checkbox').disabled = disabled;
-            const btn2 = document.getElementById('count-btn-2');
-            if (disabled) {
-                btn2.style.background = 'rgba(255,255,255,0.02)'; btn2.style.color = '#5c6b7d';
-            } else {
-                btn2.style.background = 'rgba(255,255,255,0.05)'; btn2.style.color = 'var(--text-main)';
-            }
         }
 
         function openRouletteView(caseId) {
-            activeCaseId = caseId;
-            const cfg = casesConfig[caseId];
-            
+            activeCaseId = caseId; const cfg = casesConfig[caseId];
             document.getElementById('cases-list').style.display = 'none';
             document.getElementById('roulette-view').style.display = 'block';
             document.getElementById('active-case-name').innerText = cfg.name;
             document.getElementById('active-case-name').style.color = cfg.theme;
+            document.getElementById('active-case-name').style.textShadow = `0 0 15px ${cfg.theme}`;
+            document.getElementById('price-x1').innerHTML = `${cfg.price} <img src="Money/монеты.png" loading="lazy" decoding="async" style="width:12px; height:12px; margin-left:2px;">`;
+            document.getElementById('price-x2').innerHTML = `${cfg.price * 2} <img src="Money/монеты.png" loading="lazy" decoding="async" style="width:12px; height:12px; margin-left:2px;">`;
             
-            const btn1 = document.getElementById('spin-btn');
-            document.getElementById('price-x1').innerHTML = `${cfg.price} <img src="Money/монеты.png" loading="lazy" decoding="async" style="width:12px; height:12px; margin-left:2px;" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-            document.getElementById('price-x2').innerHTML = `${cfg.price * 2} <img src="Money/монеты.png" loading="lazy" decoding="async" style="width:12px; height:12px; margin-left:2px;" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-            
-            if(caseId === 'donat') {
-                btn1.style.background = `linear-gradient(135deg, #b8860b, ${cfg.theme})`;
-                btn1.style.color = '#000';
-            } else {
-                btn1.style.background = `linear-gradient(135deg, #b22222, ${cfg.theme})`;
-                btn1.style.color = '#fff';
-            }
-            
-            const style = document.createElement('style');
-            style.id = "dynamic-roulette-style";
-            const existingStyle = document.getElementById("dynamic-roulette-style");
-            if (existingStyle) existingStyle.remove();
-            style.innerHTML = `.roulette-wrapper::after { background: ${cfg.theme} !important; box-shadow: 0 0 20px ${cfg.theme}, 0 0 10px ${cfg.theme} !important; }`;
+            const style = document.createElement('style'); style.id = "dynamic-roulette-style";
+            const existingStyle = document.getElementById("dynamic-roulette-style"); if (existingStyle) existingStyle.remove();
+            style.innerHTML = `.roulette-wrapper::after { background: ${cfg.theme} !important; box-shadow: 0 0 25px ${cfg.theme}, 0 0 10px ${cfg.theme} !important; }`;
             document.head.appendChild(style);
 
             renderRouletteLines(1);
-
             let dropsHtml = '';
-            cfg.pool.forEach(p => {
-                const visual = p.item.img ? `<img src="${p.item.img}" loading="lazy" decoding="async" class="drop-item-img" alt="${p.item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
-                dropsHtml += `<div class="drop-item" style="border-bottom-color: ${p.item.color}">${visual}<div style="color: ${p.item.color}; font-family: var(--font-display); font-size: 11px;">${p.item.name}</div></div>`;
+            cfg.pool.forEach((p, idx) => {
+                const visual = p.item.img ? `<img src="${p.item.img}" loading="lazy" decoding="async" class="drop-item-img">` : `<div style="font-size: 20px; margin-bottom: 2px;">${p.item.icon}</div>`;
+                dropsHtml += `<div class="drop-item stagger-item" style="border-bottom-color: ${p.item.color}; animation-delay: ${idx*0.05}s">${visual}<div style="color: ${p.item.color}; font-family: var(--font-display); font-size: 11px;">${p.item.name}</div></div>`;
             });
             document.getElementById('drops-preview').innerHTML = dropsHtml;
         }
 
         function renderRouletteLines(count) {
-            const container = document.getElementById('multi-roulette-container');
-            container.innerHTML = '';
+            const container = document.getElementById('multi-roulette-container'); container.innerHTML = '';
             const cfg = casesConfig[activeCaseId];
             for(let i=0; i<count; i++) {
-                let initialHtml = '';
-                for(let j=0; j<10; j++) { initialHtml += renderCaseItem(getRandomItem(cfg.pool)); }
-                const rWrapper = document.createElement('div');
-                rWrapper.className = 'roulette-wrapper';
+                let initialHtml = ''; for(let j=0; j<10; j++) { initialHtml += renderCaseItem(getRandomItem(cfg.pool)); }
+                const rWrapper = document.createElement('div'); rWrapper.className = 'roulette-wrapper';
                 rWrapper.innerHTML = `<div class="roulette-tape-wrapper"><div class="roulette-tape" id="tape-${i}" style="transform: translate3d(-57.5px, 0, 0)">${initialHtml}</div></div>`;
                 container.appendChild(rWrapper);
             }
@@ -1129,31 +1078,31 @@
             document.getElementById('cases-list').style.display = 'grid';
             document.getElementById('roulette-view').style.display = 'none';
             document.getElementById('fast-open-checkbox').checked = false; 
+            
+            const cases = document.querySelectorAll('.case-card');
+            cases.forEach(c => { c.style.animation = 'none'; void c.offsetWidth; c.style.animation = null; });
         }
 
         function switchTab(tabId, el) {
             if (isSpinning) return;
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            el.classList.add('active');
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active');
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); 
+            const newTab = document.getElementById(tabId); newTab.classList.add('active');
+            
+            const staggerItems = newTab.querySelectorAll('.stagger-item');
+            staggerItems.forEach(item => { item.style.animation = 'none'; void item.offsetWidth; item.style.animation = null; });
+
             if (tabId === 'main-sec') closeRouletteView();
             if (tabId === 'profile-sec') renderInventory();
         }
 
         function getRandomItem(pool) {
-            const totalChance = pool.reduce((sum, p) => sum + p.chance, 0);
-            const rand = Math.random() * totalChance;
-            let sum = 0;
-            for (let p of pool) { 
-                sum += p.chance; 
-                if (rand <= sum) return p.item; 
-            }
-            return pool[0].item;
+            const totalChance = pool.reduce((sum, p) => sum + p.chance, 0); const rand = Math.random() * totalChance; let sum = 0;
+            for (let p of pool) { sum += p.chance; if (rand <= sum) return p.item; } return pool[0].item;
         }
 
         function renderCaseItem(item) {
-            const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div class="item-icon">${item.icon}</div>`;
+            const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img">` : `<div class="item-icon">${item.icon}</div>`;
             return `<div class="case-item" style="border-bottom-color: ${item.color};">${visual}<span style="color: ${item.color}">${item.name}</span></div>`;
         }
 
@@ -1163,191 +1112,135 @@
             const totalPrice = currentCase.price * count;
             
             if (balance < totalPrice) {
-                const balBox = document.getElementById('global-balance');
-                balBox.style.transform = 'scale(1.2)';
-                balBox.style.borderColor = 'var(--danger)';
+                const balBox = document.getElementById('global-balance'); balBox.style.transform = 'scale(1.2)'; balBox.style.borderColor = 'var(--danger)';
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-                setTimeout(() => {
-                    balBox.style.transform = 'scale(1)';
-                    balBox.style.borderColor = 'rgba(255, 204, 0, 0.3)';
-                }, 300);
+                setTimeout(() => { balBox.style.transform = 'scale(1)'; balBox.style.borderColor = 'rgba(255, 204, 0, 0.3)'; }, 300);
+                showNotification('Недостаточно монет!', 'error');
                 return;
             }
 
-            updateBalanceUI(-totalPrice);
-            isSpinning = true;
-            setButtonsState(true);
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            updateBalanceUI(-totalPrice); isSpinning = true; setButtonsState(true);
+            
+            // ВСПЫШКА ВОЛНОЙ И ТРЯСКА С МЯГКИМ ЗВУКОМ
+            const flash = document.getElementById('screen-flash');
+            flash.style.background = `radial-gradient(circle at center, ${currentCase.theme} 0%, transparent 60%)`;
+            flash.style.transition = 'none'; flash.style.opacity = '0.4'; flash.style.transform = 'scale(0.8)';
+            void flash.offsetWidth; 
+            flash.style.transition = 'all 0.6s ease-out'; flash.style.opacity = '0'; flash.style.transform = 'scale(2.5)';
+            
+            document.body.classList.add('shake-anim');
+            setTimeout(() => { document.body.classList.remove('shake-anim'); }, 400);
+
+            playMechanicalUnlock();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
             
             const isFastOpen = document.getElementById('fast-open-checkbox').checked;
             renderRouletteLines(count);
-
-            wonItemsArray = [];
-            let totalValue = 0;
-            let animationsFinished = 0;
-            const targetIndex = 20; 
-            const targetX = (targetIndex * ITEM_WIDTH);
+            wonItemsArray = []; let totalValue = 0; let animationsFinished = 0;
+            const targetIndex = 20; const targetX = (targetIndex * ITEM_WIDTH);
             
             if (isFastOpen) {
-                playFastOpenSound();
                 for(let i=0; i<count; i++) {
-                    const item = getRandomItem(currentCase.pool);
-                    wonItemsArray.push(item);
-                    totalValue += item.price;
+                    const item = getRandomItem(currentCase.pool); wonItemsArray.push(item); totalValue += item.price;
                     const tape = document.getElementById(`tape-${i}`);
-                    if(tape) {
-                        tape.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)';
-                        tape.style.transform = `translate3d(calc(-57.5px - ${ITEM_WIDTH * 5}px), 0, 0)`;
-                    }
+                    if(tape) { tape.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.1, 0.25, 1)'; tape.style.transform = `translate3d(calc(-57.5px - ${ITEM_WIDTH * 5}px), 0, 0)`; }
                 }
-                setTimeout(() => finishOpening(count, totalValue), 500);
-                return;
+                setTimeout(() => finishOpening(count, totalValue), 500); return;
             }
 
             for(let i=0; i<count; i++) {
-                const tape = document.getElementById(`tape-${i}`);
-                if (!tape) continue;
-                
-                let tapeHtml = '';
-                const tapeItems = [];
-                for (let j = 0; j < 25; j++) {
-                    const item = getRandomItem(currentCase.pool);
-                    tapeItems.push(item);
-                    tapeHtml += renderCaseItem(item);
-                }
-                
-                const wonItem = tapeItems[targetIndex];
-                wonItemsArray.push(wonItem);
-                totalValue += wonItem.price;
-                
-                tape.innerHTML = tapeHtml;
-                tape.style.transition = 'none';
-                tape.style.transform = 'translate3d(-57.5px, 0, 0)';
+                const tape = document.getElementById(`tape-${i}`); if (!tape) continue;
+                let tapeHtml = ''; const tapeItems = [];
+                for (let j = 0; j < 25; j++) { const item = getRandomItem(currentCase.pool); tapeItems.push(item); tapeHtml += renderCaseItem(item); }
+                const wonItem = tapeItems[targetIndex]; wonItemsArray.push(wonItem); totalValue += wonItem.price;
+                tape.innerHTML = tapeHtml; tape.style.transition = 'none'; tape.style.transform = 'translate3d(-57.5px, 0, 0)';
                 
                 setTimeout(() => {
-                    animateTape(tape, targetX, () => {
-                        animationsFinished++;
-                        if(animationsFinished === count) finishOpening(count, totalValue);
-                    });
+                    animateTape(tape, targetX, () => { animationsFinished++; if(animationsFinished === count) finishOpening(count, totalValue); });
                 }, i * 250); 
             }
         }
         
         function animateTape(tape, targetX, callback) {
-            let startT = null;
-            let lastTick = -1;
+            let startT = null; let lastTick = -1;
             function step(now) {
-                if (!startT) startT = now;
-                let progress = (now - startT) / 3500; 
-                if (progress > 1) progress = 1;
+                if (!startT) startT = now; let progress = (now - startT) / 3500; if (progress > 1) progress = 1;
                 const currentX = targetX * easeOut(progress);
                 tape.style.transform = `translate3d(calc(-57.5px - ${currentX}px), 0, 0)`;
-
                 const currIdx = Math.floor((currentX + (ITEM_WIDTH / 2)) / ITEM_WIDTH);
-                if (currIdx !== lastTick && currIdx < 25) { 
-                    if (lastTick !== -1 && progress < 0.98) playTick();
-                    lastTick = currIdx;
-                }
-                if (progress < 1) requestAnimationFrame(step);
-                else if(callback) callback();
+                if (currIdx !== lastTick && currIdx < 25) { if (lastTick !== -1 && progress < 0.95) playTickSoft(); lastTick = currIdx; }
+                if (progress < 1) requestAnimationFrame(step); else if(callback) callback();
             }
             requestAnimationFrame(step);
         }
 
         function finishOpening(count, totalValue) {
-            isSpinning = false;
-            setButtonsState(false);
-            
-            casesOpened += count;
-            document.getElementById('cases-opened-count').innerText = casesOpened;
-            saveState(); 
+            isSpinning = false; setButtonsState(false);
+            casesOpened += count; document.getElementById('cases-opened-count').innerText = casesOpened; saveState(); 
 
-            playWin();
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            if (count === 1) showWinModalSingle(wonItemsArray[0]);
-            else showWinModalMulti(wonItemsArray, totalValue);
+            let isRare = false; wonItemsArray.forEach(i => { if (i.price >= 500) isRare = true; });
+            playWinDrop(isRare);
+            
+            if (tg.HapticFeedback) {
+                if (isRare) {
+                    tg.HapticFeedback.impactOccurred('medium'); setTimeout(()=> tg.HapticFeedback.impactOccurred('medium'), 150); setTimeout(()=> tg.HapticFeedback.impactOccurred('medium'), 300);
+                } else {
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            }
+            if (count === 1) showWinModalSingle(wonItemsArray[0]); else showWinModalMulti(wonItemsArray, totalValue);
         }
 
-        // --- 9. ЛОГИКА МОДАЛОК ВЫИГРЫША С КЕЙСОВ ---
+        // --- 9. ЛОГИКА МОДАЛОК ВЫИГРЫША ---
         const winModal = document.getElementById('win-modal');
         const singleView = document.getElementById('single-drop-view');
         const multiView = document.getElementById('multi-drop-view');
         
         function showWinModalSingle(item) {
-            document.getElementById('modal-title').innerText = "ВЫПАЛО!";
-            singleView.style.display = 'block';
-            multiView.style.display = 'none';
-            
+            document.getElementById('modal-title').innerText = "ВЫПАЛО!"; singleView.style.display = 'block'; multiView.style.display = 'none';
             const iconContainer = document.getElementById('modal-icon-container');
-            if (item.img) iconContainer.innerHTML = `<img src="${item.img}" loading="lazy" decoding="async" class="modal-item-img" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-            else iconContainer.innerHTML = `<div class="modal-item-icon">${item.icon}</div>`;
-            
-            document.getElementById('modal-name').innerText = item.name;
-            document.getElementById('modal-name').style.color = item.color;
-            document.getElementById('modal-glow').style.background = item.color;
-            
-            const actionsContainer = document.getElementById('modal-actions-container');
-            const priceEl = document.getElementById('modal-price');
+            iconContainer.innerHTML = item.img ? `<img src="${item.img}" class="modal-item-img item-drop-anim">` : `<div class="modal-item-icon item-drop-anim" style="font-size:60px;">${item.icon}</div>`;
+            document.getElementById('modal-name').innerText = item.name; document.getElementById('modal-name').style.color = item.color; 
+            document.getElementById('modal-name').style.textShadow = `0 0 15px ${item.color}`; document.getElementById('modal-glow').style.background = item.color;
+            const actionsContainer = document.getElementById('modal-actions-container'); const priceEl = document.getElementById('modal-price');
 
             if (item.isCurrency) {
-                priceEl.innerHTML = `Начислено: ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-                actionsContainer.innerHTML = `<button class="btn btn-modal-sell" style="background: linear-gradient(135deg, #f39c12, #ffd700); box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); flex-direction: row;" onclick="handleModalAction('claim')">ЗАБРАТЬ МОНЕТЫ</button>`;
+                priceEl.innerHTML = `Начислено: ${item.price} <img src="Money/монеты.png" class="coin-icon">`;
+                actionsContainer.innerHTML = `<button class="btn btn-modal-sell" style="background: linear-gradient(135deg, rgba(243, 156, 18, 0.8), rgba(255, 215, 0, 0.6)); border-color: rgba(255, 215, 0, 0.5); color: #fff;" onclick="handleModalAction('claim')">ЗАБРАТЬ МОНЕТЫ</button>`;
             } else {
-                priceEl.innerHTML = `Стоимость: ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-                actionsContainer.innerHTML = `
-                    <button class="btn btn-modal-sell" onclick="handleModalAction('sell', ${item.price})">ПРОДАТЬ ЗА ${item.price} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
-                    <button class="btn btn-modal-keep" onclick="handleModalAction('keep')">ОСТАВИТЬ В ИНВЕНТАРЕ</button>
-                `;
+                priceEl.innerHTML = `Стоимость: ${item.price} <img src="Money/монеты.png" class="coin-icon">`;
+                actionsContainer.innerHTML = `<button class="btn btn-modal-sell" onclick="handleModalAction('sell', ${item.price})">ПРОДАТЬ ЗА ${item.price} <img src="Money/монеты.png" class="coin-icon"></button><button class="btn btn-modal-keep" onclick="handleModalAction('keep')">ОСТАВИТЬ В ИНВЕНТАРЕ</button>`;
             }
             winModal.classList.add('show');
         }
 
         function showWinModalMulti(items, totalValue) {
-            document.getElementById('modal-title').innerText = `ВЫПАЛО ${items.length} ШТ!`;
-            singleView.style.display = 'none';
-            multiView.style.display = 'block';
+            document.getElementById('modal-title').innerText = `ВЫПАЛО ${items.length} ШТ!`; singleView.style.display = 'none'; multiView.style.display = 'block';
             document.getElementById('modal-glow').style.background = casesConfig[activeCaseId].theme;
-            
-            const container = document.getElementById('multi-drop-container');
-            let html = '';
-            items.forEach(item => {
-                const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 24px; margin-bottom: 5px;">${item.icon}</div>`;
-                html += `<div class="multi-drop-item" style="border-bottom-color: ${item.color}">${visual}<div style="color: ${item.color}; font-size: 11px; font-family: var(--font-display);">${item.name}</div><div style="color: var(--text-muted); font-size: 10px;">${item.price} <img src="Money/монеты.png" style="width: 10px; height: 10px;" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></div></div>`;
+            const container = document.getElementById('multi-drop-container'); let html = '';
+            items.forEach((item, idx) => {
+                const visual = item.img ? `<img src="${item.img}" class="item-drop-anim" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; animation-delay: ${idx*0.05}s">` : `<div style="font-size: 24px; margin-bottom: 5px;" class="item-drop-anim" style="animation-delay: ${idx*0.05}s">${item.icon}</div>`;
+                html += `<div class="multi-drop-item" style="border-bottom-color: ${item.color}">${visual}<div style="color: ${item.color}; font-size: 11px; font-family: var(--font-display);">${item.name}</div><div style="color: var(--text-muted); font-size: 10px;">${item.price} <img src="Money/монеты.png" style="width: 10px; height: 10px;"></div></div>`;
             });
-            container.innerHTML = html;
-            document.getElementById('multi-total-price').innerHTML = `Общая стоимость: ${totalValue} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">`;
-            
+            container.innerHTML = html; document.getElementById('multi-total-price').innerHTML = `Общая стоимость: ${totalValue} <img src="Money/монеты.png" class="coin-icon">`;
             const actionsContainer = document.getElementById('modal-actions-container');
-            actionsContainer.innerHTML = `
-                <button class="btn btn-modal-sell" style="flex-direction: row;" onclick="handleModalAction('sell', ${totalValue})">ПРОДАТЬ ВСЁ ЗА ${totalValue} <img src="Money/монеты.png" class="coin-icon" alt="монеты" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';"></button>
-                <button class="btn btn-modal-keep" onclick="handleModalAction('keep')">СОХРАНИТЬ В ИНВЕНТАРЕ</button>
-            `;
+            actionsContainer.innerHTML = `<button class="btn btn-modal-sell" style="flex-direction: row;" onclick="handleModalAction('sell', ${totalValue})">ПРОДАТЬ ВСЁ ЗА ${totalValue} <img src="Money/монеты.png" class="coin-icon"></button><button class="btn btn-modal-keep" onclick="handleModalAction('keep')">СОХРАНИТЬ В ИНВЕНТАРЕ</button>`;
             winModal.classList.add('show');
         }
 
         function handleModalAction(action, val = 0) {
             if (action === 'sell' || action === 'claim') {
-                if(val > 0) {
-                    updateBalanceUI(val);
-                    playSellSound();
-                }
+                if(val > 0) { updateBalanceUI(val); playSellSound(); }
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             } else if (action === 'keep') {
-                let coinsToBalance = 0;
-                wonItemsArray.forEach(item => {
-                    if (item.isCurrency) coinsToBalance += item.price;
-                    else inventoryItems.unshift(item);
-                });
+                let coinsToBalance = 0; wonItemsArray.forEach(item => { if (item.isCurrency) coinsToBalance += item.price; else inventoryItems.unshift(item); });
                 if (coinsToBalance > 0) updateBalanceUI(coinsToBalance);
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
             }
-            saveState(); 
-            winModal.classList.remove('show');
-            wonItemsArray = [];
-            renderRouletteLines(1);
+            saveState(); winModal.classList.remove('show'); wonItemsArray = []; renderRouletteLines(1);
         }
 
-        // --- 10. ИНВЕНТАРЬ (ОБНОВЛЁН ДЛЯ АПГРЕЙДА) ---
+        // --- 10. ИНВЕНТАРЬ ---
         function renderInventory() {
             const invContainer = document.getElementById('inventory');
             if (inventoryItems.length === 0) {
@@ -1356,48 +1249,27 @@
             }
             let html = '';
             inventoryItems.forEach((item, i) => {
-                const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;" alt="${item.name}" onerror="this.onerror=null;this.src='https://playoxide.com/media/oxide-brand.png';">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
-                
-                // НОВОЕ: ИСПРАВЛЕНА ВЫЛЕЗАЮЩАЯ КНОПКА (теперь кнопки друг под другом и занимают 100% ширины)
-                let upgradeBtnHTML = item.isCurrency ? '' : `<button class="btn" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px; background: linear-gradient(135deg, #9b59b6, #e74c3c); box-shadow: none;" onclick="openUpgradeModal(${i})">АПГРЕЙД</button>`;
-
-                html += `<div class="inv-item glass-panel" style="border-bottom: 3px solid ${item.color};">
-                    ${visual}
-                    <div style="margin: 5px 0; color: ${item.color}">${item.name}</div>
-                    <div style="display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: auto;">
-                        <button class="btn btn-sell" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px;" onclick="sellItem(${i})">ПРОДАТЬ ${item.price}</button>
-                        ${upgradeBtnHTML}
-                    </div>
-                </div>`;
+                const visual = item.img ? `<img src="${item.img}" loading="lazy" decoding="async" class="item-img" style="width: 45px; height: 45px; margin-bottom:5px;">` : `<div style="font-size: 28px; margin-bottom: 5px;">${item.icon}</div>`;
+                let upgradeBtnHTML = item.isCurrency ? '' : `<button class="btn" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px; background: linear-gradient(135deg, rgba(155, 89, 182, 0.7), rgba(231, 76, 60, 0.6)); border-color: rgba(231, 76, 60, 0.4); box-shadow: none;" onclick="openUpgradeModal(${i})">АПГРЕЙД</button>`;
+                let staggerDelay = Math.min(i * 0.05, 0.4);
+                html += `<div class="inv-item glass-panel stagger-item" style="border-bottom: 3px solid ${item.color}; animation-delay: ${staggerDelay}s">${visual}<div style="margin: 5px 0; color: ${item.color}">${item.name}</div><div style="display: flex; flex-direction: column; gap: 5px; width: 100%; margin-top: auto;"><button class="btn btn-sell" style="width: 100%; min-height: 32px; padding: 4px; font-size: 10px;" onclick="sellItem(${i})">ПРОДАТЬ ${item.price}</button>${upgradeBtnHTML}</div></div>`;
             });
             invContainer.innerHTML = html;
         }
 
         function sellItem(index) {
-            updateBalanceUI(inventoryItems[index].price);
-            playSellSound();
+            updateBalanceUI(inventoryItems[index].price); playSellSound();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            inventoryItems.splice(index, 1);
-            saveState(); 
-            renderInventory();
+            inventoryItems.splice(index, 1); saveState(); renderInventory();
         }
 
-        // --- 11. ЛОГИКА АПГРЕЙДА (СИСТЕМА GAMBLE) ---
-        let currentUpgradeSourceIndex = null;
-        let currentUpgradeTargetKey = null;
+        // --- 11. ЛОГИКА АПГРЕЙДА (GAMBLE) ---
+        let currentUpgradeSourceIndex = null; let currentUpgradeTargetKey = null;
 
         function openUpgradeModal(index) {
-            currentUpgradeSourceIndex = index;
-            const sourceItem = inventoryItems[index];
-            
+            currentUpgradeSourceIndex = index; const sourceItem = inventoryItems[index];
             let validTargets = [];
-            for (const key in allItems) {
-                const item = allItems[key];
-                if (!item.isCurrency && item.price > sourceItem.price) {
-                    validTargets.push({ key, item });
-                }
-            }
-            
+            for (const key in allItems) { const item = allItems[key]; if (!item.isCurrency && item.price > sourceItem.price) { validTargets.push({ key, item }); } }
             validTargets.sort((a, b) => a.item.price - b.item.price);
             
             const grid = document.getElementById('upgrade-targets-grid');
@@ -1406,164 +1278,102 @@
             } else {
                 grid.innerHTML = validTargets.map(t => {
                     const visual = t.item.img ? `<img src="${t.item.img}" loading="lazy" style="width:50px;height:50px; object-fit:contain; margin-bottom:5px;">` : `<div style="font-size:30px;">${t.item.icon}</div>`;
-                    return `<div class="upgrade-target-card" id="upgrade-target-${t.key}" onclick="selectUpgradeTarget('${t.key}', ${sourceItem.price})">
-                        ${visual}
-                        <div style="font-size: 11px; font-family: var(--font-display); font-weight: 800; color: ${t.item.color}; text-align: center;">${t.item.name}</div>
-                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">${t.item.price} <img src="Money/монеты.png" style="width:10px;height:10px;vertical-align:-1px;"></div>
-                    </div>`;
+                    return `<div class="upgrade-target-card" id="upgrade-target-${t.key}" onclick="selectUpgradeTarget('${t.key}', ${sourceItem.price})">${visual}<div style="font-size: 11px; font-family: var(--font-display); font-weight: 800; color: ${t.item.color}; text-align: center;">${t.item.name}</div><div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">${t.item.price} <img src="Money/монеты.png" style="width:10px;height:10px;vertical-align:-1px;"></div></div>`;
                 }).join('');
             }
-            
-            document.getElementById('upgrade-modal').classList.add('show');
-            document.getElementById('upgrade-selection-section').style.display = 'block';
-            document.getElementById('upgrade-wheel-section').style.display = 'none';
-            document.getElementById('upgrade-result-section').style.display = 'none';
-            
-            currentUpgradeTargetKey = null;
-            updateUpgradeButtonUI(sourceItem.price);
+            document.getElementById('upgrade-modal').classList.add('show'); document.getElementById('upgrade-selection-section').style.display = 'block'; document.getElementById('upgrade-wheel-section').style.display = 'none'; document.getElementById('upgrade-result-section').style.display = 'none';
+            currentUpgradeTargetKey = null; updateUpgradeButtonUI(sourceItem.price);
         }
 
         function selectUpgradeTarget(targetKey, sourcePrice) {
-            document.querySelectorAll('.upgrade-target-card').forEach(el => el.classList.remove('selected'));
-            document.getElementById(`upgrade-target-${targetKey}`).classList.add('selected');
-            currentUpgradeTargetKey = targetKey;
-            updateUpgradeButtonUI(sourcePrice);
+            document.querySelectorAll('.upgrade-target-card').forEach(el => el.classList.remove('selected')); document.getElementById(`upgrade-target-${targetKey}`).classList.add('selected'); currentUpgradeTargetKey = targetKey; updateUpgradeButtonUI(sourcePrice);
         }
 
         function updateUpgradeButtonUI(sourcePrice) {
             const btn = document.getElementById('btn-confirm-upgrade');
-            if (!currentUpgradeTargetKey) {
-                btn.disabled = true;
-                btn.innerText = "ВЫБЕРИТЕ ПРЕДМЕТ";
-            } else {
-                const targetItem = allItems[currentUpgradeTargetKey];
-                let chance = (sourcePrice / targetItem.price) * 100;
-                chance = Math.max(1, Math.min(95, chance)); 
-                
-                if (balance < 50) {
-                    btn.disabled = true;
-                    btn.innerHTML = `НЕДОСТАТОЧНО МОНЕТ (НУЖНО 50)`;
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = `КРУТИТЬ (ШАНС ${chance.toFixed(1)}%) <br><span style="font-size:10px; font-family: var(--font-body); font-weight:600; margin-top:2px;">Цена: 50 монет</span>`;
-                }
+            if (!currentUpgradeTargetKey) { btn.disabled = true; btn.innerText = "ВЫБЕРИТЕ ПРЕДМЕТ"; } else {
+                const targetItem = allItems[currentUpgradeTargetKey]; let chance = (sourcePrice / targetItem.price) * 100; chance = Math.max(1, Math.min(95, chance)); 
+                if (balance < 50) { btn.disabled = true; btn.innerHTML = `НЕДОСТАТОЧНО МОНЕТ (НУЖНО 50)`; } else { btn.disabled = false; btn.innerHTML = `КРУТИТЬ (ШАНС ${chance.toFixed(1)}%) <br><span style="font-size:10px; font-family: var(--font-body); font-weight:600; margin-top:2px;">Цена: 50 монет</span>`; }
             }
         }
 
         function startUpgradeSpin() {
             if (!currentUpgradeTargetKey || balance < 50 || currentUpgradeSourceIndex === null) return;
-            
             updateBalanceUI(-50);
-            
-            const sourceItem = inventoryItems[currentUpgradeSourceIndex];
-            const targetItem = allItems[currentUpgradeTargetKey];
-            
-            let chance = (sourceItem.price / targetItem.price) * 100;
-            chance = Math.max(1, Math.min(95, chance));
-            
+            const sourceItem = inventoryItems[currentUpgradeSourceIndex]; const targetItem = allItems[currentUpgradeTargetKey];
+            let chance = (sourceItem.price / targetItem.price) * 100; chance = Math.max(1, Math.min(95, chance));
             const isWin = (Math.random() * 100) <= chance;
             
-            document.getElementById('upgrade-selection-section').style.display = 'none';
-            document.getElementById('upgrade-wheel-section').style.display = 'block';
-            
-            const wheel = document.getElementById('upgrade-wheel');
-            const statusText = document.getElementById('upgrade-spin-status');
-            statusText.innerText = "Крутим барабан...";
-            statusText.style.color = "var(--text-muted)";
+            document.getElementById('upgrade-selection-section').style.display = 'none'; document.getElementById('upgrade-wheel-section').style.display = 'block';
+            const wheel = document.getElementById('upgrade-wheel'); const statusText = document.getElementById('upgrade-spin-status');
+            statusText.innerText = "Крутим барабан..."; statusText.style.color = "var(--brand-primary)";
             
             const greenDeg = (chance / 100) * 360;
             wheel.style.background = `conic-gradient(var(--success) 0deg ${greenDeg}deg, var(--danger) ${greenDeg}deg 360deg)`;
             
-            const padGreen = Math.min(2, greenDeg / 10);
-            const padRed = Math.min(2, (360 - greenDeg) / 10);
-            let finalPointerAngle;
+            const padGreen = Math.min(2, greenDeg / 10); const padRed = Math.min(2, (360 - greenDeg) / 10);
+            let finalPointerAngle = isWin ? padGreen + Math.random() * (greenDeg - 2 * padGreen) : greenDeg + padRed + Math.random() * (360 - greenDeg - 2 * padRed);
+            const baseSpins = 5 * 360; const targetRotation = baseSpins + (360 - finalPointerAngle);
             
-            if (isWin) {
-                finalPointerAngle = padGreen + Math.random() * (greenDeg - 2 * padGreen);
-            } else {
-                finalPointerAngle = greenDeg + padRed + Math.random() * (360 - greenDeg - 2 * padRed);
-            }
-            
-            const baseSpins = 5 * 360; 
-            const targetRotation = baseSpins + (360 - finalPointerAngle);
-            
-            wheel.style.transition = 'none';
-            wheel.style.transform = `rotate(0deg)`;
-            wheel.offsetHeight; 
-            
-            wheel.style.transition = 'transform 4s cubic-bezier(0.1, 1.4, 0.3, 1)';
-            wheel.style.transform = `rotate(${targetRotation}deg)`;
-            
+            wheel.style.transition = 'none'; wheel.style.transform = `rotate(0deg)`; wheel.offsetHeight; 
+            wheel.style.transition = 'transform 4s cubic-bezier(0.1, 1.4, 0.3, 1)'; wheel.style.transform = `rotate(${targetRotation}deg)`;
             document.getElementById('upgrade-wheel-chance').innerText = `${chance.toFixed(1)}%`;
             
-            // НОВОЕ: Добавлен звук тиканья при вращении колеса
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let startT = Date.now();
-            let lastTick = -1;
+            playGambleBet(); 
+
+            let startT = Date.now(); let lastTick = -1;
             function wheelAudioStep() {
-                let progress = (Date.now() - startT) / 4000;
-                if (progress > 1) progress = 1;
-                
-                // Используем easeOut для синхронизации частоты тиков с замедлением рулетки
-                const currentRot = targetRotation * easeOut(progress); 
-                const currIdx = Math.floor(currentRot / 25); // Один тик каждые 25 градусов
-                
-                if (currIdx !== lastTick && progress < 0.95) { // Не тикаем в конце при физическом отскоке рулетки
-                    playTick();
-                    lastTick = currIdx;
-                }
+                let progress = (Date.now() - startT) / 4000; if (progress > 1) progress = 1;
+                const currentRot = targetRotation * easeOut(progress); const currIdx = Math.floor(currentRot / 25); 
+                if (currIdx !== lastTick && progress < 0.95) { playTickSoft(); lastTick = currIdx; }
                 if (progress < 1) requestAnimationFrame(wheelAudioStep);
             }
             requestAnimationFrame(wheelAudioStep);
             
-            setTimeout(() => {
-                finishUpgrade(isWin, targetItem);
-            }, 4000);
+            setTimeout(() => { finishUpgrade(isWin, targetItem); }, 4000);
+        }
+
+        function createUpgradeSparks() {
+            const container = document.getElementById('spark-container'); container.innerHTML = '';
+            for(let i=0; i<20; i++) {
+                const spark = document.createElement('div');
+                spark.style.position = 'absolute'; spark.style.width = '3px'; spark.style.height = '3px';
+                spark.style.background = '#2ed573'; spark.style.borderRadius = '50%'; spark.style.boxShadow = '0 0 10px #2ed573';
+                container.appendChild(spark);
+                const angle = Math.random() * Math.PI * 2; const dist = 60 + Math.random() * 120;
+                spark.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px) scale(0)`, opacity: 0 }], { duration: 1000, easing: 'ease-out' });
+            }
         }
 
         function finishUpgrade(isWin, targetItem) {
             inventoryItems.splice(currentUpgradeSourceIndex, 1);
-            
             if (isWin) {
-                inventoryItems.unshift(targetItem);
-                playWin();
+                inventoryItems.unshift(targetItem); playGambleResult(true); createUpgradeSparks();
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             } else {
+                playGambleResult(false);
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             }
-            
-            saveState();
-            renderInventory(); 
-            showUpgradeResult(isWin, targetItem);
+            saveState(); renderInventory(); showUpgradeResult(isWin, targetItem);
         }
 
         function showUpgradeResult(isWin, item) {
-            const resTitle = document.getElementById('upgrade-res-title');
-            const resMsg = document.getElementById('upgrade-res-msg');
-            const iconContainer = document.getElementById('upgrade-res-icon');
+            const resTitle = document.getElementById('upgrade-res-title'); const resMsg = document.getElementById('upgrade-res-msg'); const iconContainer = document.getElementById('upgrade-res-icon');
             
             if (isWin) {
-                const visual = item.img ? `<img src="${item.img}" style="width:100px;height:100px; object-fit:contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));">` : `<div style="font-size:60px;">${item.icon}</div>`;
-                iconContainer.innerHTML = visual;
-                resTitle.innerText = 'УСПЕШНЫЙ АПГРЕЙД!';
-                resTitle.style.color = 'var(--success)';
+                iconContainer.innerHTML = item.img ? `<img src="${item.img}" class="item-drop-anim" style="width:100px;height:100px; object-fit:contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));">` : `<div style="font-size:60px;" class="item-drop-anim">${item.icon}</div>`;
+                resTitle.innerText = 'УСПЕШНЫЙ АПГРЕЙД!'; resTitle.style.color = 'var(--success)'; resTitle.style.textShadow = '0 0 10px var(--success)';
                 resMsg.innerHTML = `Вы получили новый скин: <br><span style="color:${item.color}; font-weight:800; font-size:16px;">${item.name}</span>`;
             } else {
-                iconContainer.innerHTML = `<div style="font-size:80px; filter: grayscale(100%); opacity:0.5;">☠️</div>`;
-                resTitle.innerText = 'ПРОВАЛ';
-                resTitle.style.color = 'var(--danger)';
+                iconContainer.innerHTML = item.img ? `<img src="${item.img}" class="dissolve-anim" style="width:100px;height:100px; object-fit:contain;">` : `<div style="font-size:60px;" class="dissolve-anim">${item.icon}</div>`;
+                resTitle.innerText = 'ПРОВАЛ'; resTitle.style.color = 'var(--danger)'; resTitle.style.textShadow = '0 0 10px var(--danger)';
                 resMsg.innerText = `Ваш предмет был уничтожен.`;
+                setTimeout(() => { iconContainer.innerHTML = `<div style="font-size:80px; filter: grayscale(100%); opacity:0.5; animation: fadeInSoft 0.5s ease-out forwards;">☠️</div>`; }, 1200);
             }
-            
-            document.getElementById('upgrade-wheel-section').style.display = 'none';
-            document.getElementById('upgrade-result-section').style.display = 'block';
+            document.getElementById('upgrade-wheel-section').style.display = 'none'; document.getElementById('upgrade-result-section').style.display = 'block';
         }
 
-        function closeUpgradeModal() {
-            document.getElementById('upgrade-modal').classList.remove('show');
-            currentUpgradeSourceIndex = null;
-            currentUpgradeTargetKey = null;
-        }
+        function closeUpgradeModal() { document.getElementById('upgrade-modal').classList.remove('show'); currentUpgradeSourceIndex = null; currentUpgradeTargetKey = null; }
     </script>
 </body>
 </html>
