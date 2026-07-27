@@ -75,52 +75,46 @@
         .aurora-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(135deg, #060b14, #0a1628, #060b14);
-            background-size: 200% 200%; animation: auroraGradient 10s ease infinite; z-index: -4;
+            background-size: 200% 200%; animation: auroraGradient 12s ease infinite; z-index: -4;
         }
         .aurora-wave {
             position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(ellipse at center, rgba(0, 210, 255, 0.04) 0%, transparent 60%);
-            animation: auroraWave 20s infinite linear; pointer-events: none;
+            background: radial-gradient(ellipse at center, rgba(0, 210, 255, 0.03) 0%, transparent 60%);
+            animation: auroraWave 25s infinite linear; pointer-events: none;
+            will-change: transform;
         }
         @keyframes auroraGradient { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
         @keyframes auroraWave { 0% {transform: rotate(0deg)} 100% {transform: rotate(360deg)} }
 
         .screen-border {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9998;
-            box-shadow: inset 0 0 20px rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(0, 210, 255, 0.05); border: 1px solid rgba(0, 210, 255, 0.03);
         }
 
-        /* Мягкие меняющие цвет частицы (Звёзды) */
+        /* ОПТИМИЗАЦИЯ: Мягкие меняющие цвет частицы (Звёзды) - их станет меньше */
         #particles-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; overflow: hidden; }
-        .particle { position: absolute; border-radius: 50%; opacity: 0; }
+        .particle { position: absolute; border-radius: 50%; opacity: 0; will-change: transform, opacity; }
         @keyframes floatUpSoft { 
             0% { transform: translateY(100vh) translateX(0) scale(0); opacity: 0; background: #fff; box-shadow: 0 0 5px #fff; } 
-            50% { opacity: var(--max-opacity); background: #00d2ff; box-shadow: 0 0 12px #00d2ff; } 
+            50% { opacity: var(--max-opacity); background: #00d2ff; box-shadow: 0 0 10px #00d2ff; } 
             100% { transform: translateY(-10vh) translateX(var(--drift)) scale(1.2); opacity: 0; background: #00d2ff; } 
         }
 
-        /* МЯГКАЯ ВСПЫШКА (без белого) И ТРЯСКА */
+        /* МЯГКАЯ ВСПЫШКА (заменено с белого на мягкий цвет кейса) */
         #screen-flash { 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             opacity: 0; z-index: 10000; pointer-events: none; mix-blend-mode: screen; 
             transform: scale(0.8); 
+            will-change: opacity, transform, background;
         }
-        @keyframes subtleShake {
-            0%, 100% { transform: translate(0, 0); }
-            20% { transform: translate(-1px, 1px); }
-            40% { transform: translate(1px, -1px); }
-            60% { transform: translate(-1px, 0); }
-            80% { transform: translate(1px, 1px); }
-        }
-        .shake-anim { animation: subtleShake 0.4s ease-in-out both; }
-
-        .vignette { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95) 130%); z-index: -1; pointer-events: none; }
+        
+        .vignette { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.85) 130%); z-index: -1; pointer-events: none; }
 
         /* Эффекты Glassmorphism */
         .glass-panel {
-            background: var(--blue-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: var(--blue-glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--blue-glass-border); border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05); overflow: hidden; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03); overflow: hidden; 
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
         }
 
@@ -149,10 +143,9 @@
         
         /* Плавные переходы вкладок */
         .section { display: none; opacity: 0; }
-        .section.active { display: block; opacity: 1; animation: fadeInSoft 0.5s ease-out forwards; }
+        .section.active { display: block; opacity: 1; animation: fadeInSoft 0.4s ease-out forwards; }
         @keyframes fadeInSoft { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ПЛАВНЫЕ АНИМАЦИИ STAGGER */
         .stagger-item { opacity: 0; transform: translateY(15px); animation: softFadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes softFadeInUp { to { opacity: 1; transform: translateY(0); } }
 
@@ -168,21 +161,12 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         
-        /* Анимированная градиентная обводка */
         .case-card::before {
             content: ''; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px; z-index: -1;
             border-radius: inherit; background: linear-gradient(60deg, var(--brand-primary), #8a2be2, var(--brand-secondary), var(--brand-primary));
-            background-size: 300% 300%; animation: borderGradient 8s linear infinite; opacity: 0.5;
+            background-size: 300% 300%; animation: borderGradient 8s linear infinite; opacity: 0.3;
         }
         @keyframes borderGradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        /* Глитч-линия раз в 5 сек */
-        .case-card::after {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 2px;
-            background: rgba(255,255,255,0.4); box-shadow: 0 0 10px #fff; transform: rotate(45deg) translateY(-100%);
-            animation: glitchLine 5s infinite; opacity: 0; pointer-events: none;
-        }
-        @keyframes glitchLine { 0%, 90% { transform: rotate(45deg) translateY(-200px); opacity: 0; } 92% { opacity: 0.5; } 95% { transform: rotate(45deg) translateY(300px); opacity: 0; } 100% { opacity: 0; } }
 
         .case-img-placeholder { flex-grow: 1; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 100px; }
         .case-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px var(--blue-glow); }
@@ -216,11 +200,9 @@
         .btn-sell { background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); color: var(--success); box-shadow: 0 0 10px rgba(46, 213, 115, 0.1); font-size: 13px; font-family: var(--font-body); font-weight: 800; text-shadow: 0 0 5px rgba(46, 213, 115, 0.2); }
         .btn-sell:hover { box-shadow: 0 0 15px rgba(46, 213, 115, 0.2); border-color: rgba(46, 213, 115, 0.5); }
 
-        /* След от пальца (Ripple) - МЯГКИЙ */
-        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.2); transform: scale(0); animation: rippleAnim 0.6s ease-out; pointer-events: none; }
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.15); transform: scale(0); animation: rippleAnim 0.6s ease-out; pointer-events: none; }
         @keyframes rippleAnim { to { transform: scale(3); opacity: 0; } }
 
-        /* Пульсация цены на кнопках */
         .price-pulse { display: inline-block; animation: pulsePriceText 2s infinite alternate ease-in-out; }
         @keyframes pulsePriceText { 0% { text-shadow: 0 0 4px rgba(255,255,255,0.1); transform: scale(1); } 100% { text-shadow: 0 0 10px rgba(255,255,255,0.6); transform: scale(1.05); } }
 
@@ -275,7 +257,7 @@
         .energy-bar-fill { background: linear-gradient(90deg, #f1c40f, #f39c12, #f1c40f); background-size: 200% 100%; height: 100%; width: 100%; border-radius: 12px; transition: width 0.3s ease; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); animation: energyPulse 4s infinite linear; }
         @keyframes energyPulse { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
-        /* Профиль и Инвентарь */
+        /* Профиль, Достижения и ТОП */
         .profile-header { display: flex; align-items: center; gap: var(--gap-md); }
         .profile-avatar { width: 75px; height: 75px; border-radius: 50%; background: var(--blue-glass); border: 2px solid var(--brand-primary); box-shadow: 0 0 20px rgba(0, 210, 255, 0.2); overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 35px;}
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -284,6 +266,25 @@
         .ref-box { display: flex; gap: var(--gap-sm); margin-top: 15px; }
         .ref-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(0, 210, 255, 0.3); color: var(--brand-primary); border-radius: 12px; padding: 0 16px; font-size: 14px; font-weight: 800; outline: none; font-family: var(--font-body); min-height: 48px; box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.05); transition: 0.3s; }
         
+        /* Блок Достижений (горизонтальный скролл) */
+        .achievements-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 5px;}
+        .achievements-scroll::-webkit-scrollbar { height: 4px; }
+        .achievements-scroll::-webkit-scrollbar-thumb { background: var(--brand-primary); border-radius: 4px; }
+        .achievement-card { min-width: 110px; background: rgba(10,15,30,0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; text-align: center; opacity: 0.6; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
+        .achievement-card.unlocked { opacity: 1; border-color: var(--success); box-shadow: 0 0 15px rgba(46,213,115,0.15); background: rgba(46,213,115,0.05); }
+        .ach-icon { font-size: 24px; margin-bottom: 5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));}
+        .ach-name { font-size: 11px; font-family: var(--font-display); font-weight: 800; color: #fff;}
+        .ach-desc { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Лидерборд (Топ игроков) */
+        .lb-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;}
+        .lb-row:last-child { border-bottom: none; }
+        .lb-rank { font-weight: 900; width: 28px; color: var(--text-muted); font-size: 14px;}
+        .lb-name { flex: 1; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .lb-score { font-weight: 900; color: var(--coin); display: flex; align-items: center; gap: 4px;}
+        .lb-row.is-me { background: rgba(0,210,255,0.1); border-radius: 8px; border: 1px solid rgba(0,210,255,0.2);}
+        .lb-row.is-me .lb-rank { color: var(--brand-primary); }
+
         .inventory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-md); margin-top: var(--gap-md); }
         .inv-item { padding: 12px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; font-size: 12px; font-weight: 900; background: rgba(10, 15, 30, 0.5); font-family: var(--font-display); text-transform: uppercase; overflow: hidden; min-height: 140px; gap: var(--gap-sm); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease; cursor: pointer; }
         .inv-item:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0, 210, 255, 0.1); }
@@ -309,7 +310,6 @@
         .modal-overlay.show .modal-content { transform: scale(1); }
         .modal-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 180px; border-radius: 50%; filter: blur(60px); z-index: -1; opacity: 0.3; transition: background 0.5s ease; }
         
-        /* Плавный вылет предмета (Вращение + Scale) */
         @keyframes dropAnimSoft { 0% { transform: scale(0) rotate(-180deg); opacity: 0; } 70% { transform: scale(1.2) rotate(10deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.6)); } }
         .item-drop-anim { animation: dropAnimSoft 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         
@@ -337,13 +337,12 @@
         .upgrade-target-card.selected { border-color: rgba(0,210,255,0.6); box-shadow: 0 5px 15px rgba(0,210,255,0.15); transform: translateY(-3px); background: rgba(0, 210, 255, 0.05); }
         
         .wheel-container { position: relative; width: 240px; height: 240px; margin: 20px auto; border-radius: 50%; padding: 6px; background: rgba(0,0,0,0.8); box-shadow: 0 0 30px rgba(0, 210, 255, 0.1), inset 0 0 20px rgba(0,0,0,0.9); }
-        .wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 25px rgba(0,0,0,0.9); position: relative; overflow: hidden; }
+        .wheel { width: 100%; height: 100%; border-radius: 50%; box-shadow: inset 0 0 25px rgba(0,0,0,0.9); position: relative; overflow: hidden; will-change: transform;}
         .wheel-pointer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 28px solid #fff; z-index: 10; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6)) drop-shadow(0 0 8px rgba(255,255,255,0.6)); }
         .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; background: var(--bg-base); border-radius: 50%; border: 2px solid rgba(0,210,255,0.4); display: flex; justify-content: center; align-items: center; font-weight: 900; font-family: var(--font-display); z-index: 5; box-shadow: 0 5px 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,210,255,0.1); font-size: 14px; text-shadow: 0 0 5px rgba(0,210,255,0.6); }
         .upgrade-section { display: none; }
         #spark-container { position: absolute; top: 50%; left: 50%; pointer-events: none; z-index: 20; overflow: visible; }
         
-        /* Плавное растворение при проигрыше */
         @keyframes dissolveAnim { 0% { filter: blur(0) grayscale(0); opacity: 1; transform: scale(1); } 100% { filter: blur(10px) grayscale(100%); opacity: 0; transform: scale(0.85) translateY(20px); } }
         .dissolve-anim { animation: dissolveAnim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
@@ -360,6 +359,13 @@
         .cyber-notification.show { top: 20px; opacity: 1; }
         .cn-text { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
         .cn-icon { font-size: 20px; }
+
+        /* Медиазапросы для оптимизации */
+        @media (max-width: 768px) {
+            .aurora-wave { display: none; } /* Убираем сложный градиент на мобилках */
+            .btn { font-size: 13px; }
+            .inv-item { min-height: 120px; }
+        }
     </style>
 </head>
 <body>
@@ -383,9 +389,6 @@
     <div id="preloader">
         <div class="neon-spinner"></div>
         <img src="https://playoxide.com/media/oxide-brand.png" class="preloader-logo" alt="Загрузка..." loading="lazy" decoding="async" onerror="this.onerror=null;this.src='';">
-        <div class="preloader-bar-container">
-            <div class="preloader-bar-fill" id="preloader-fill"></div>
-        </div>
         <div class="preloader-text" id="preloader-text">0%</div>
     </div>
 
@@ -393,10 +396,6 @@
     <div class="modern-bg">
         <div class="aurora-wave"></div>
         <div class="aurora-bg"></div>
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-        <div class="cyber-grid"></div>
     </div>
     <div class="vignette"></div>
 
@@ -540,9 +539,9 @@
             </div>
         </div>
 
-        <!-- ПРОФИЛЬ И ИНВЕНТАРЬ -->
+        <!-- ПРОФИЛЬ, ДОСТИЖЕНИЯ, ТОП И ИНВЕНТАРЬ -->
         <div id="profile-sec" class="section">
-            <div class="glass-panel stagger-item" id="tut-profile-panel" style="padding: 20px; margin-bottom: 24px; animation-delay: 0.1s">
+            <div class="glass-panel stagger-item" id="tut-profile-panel" style="padding: 20px; margin-bottom: 20px; animation-delay: 0.1s">
                 <div class="profile-header">
                     <div class="profile-avatar" id="tg-avatar">👤</div>
                     <div class="profile-info">
@@ -550,12 +549,21 @@
                         <p id="tg-username">@username</p>
                     </div>
                 </div>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--blue-glass-border); text-align: center; font-family: var(--font-display); font-weight: 800; color: var(--brand-primary); font-size: 15px; text-shadow: 0 0 5px rgba(0,210,255,0.3);">
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--blue-glass-border); text-align: center; font-family: var(--font-display); font-weight: 800; color: var(--brand-primary); font-size: 14px; text-shadow: 0 0 5px rgba(0,210,255,0.3);">
                     🎯 ОТКРЫТО КЕЙСОВ: <span id="cases-opened-count" style="color: #fff; font-weight: 900;">0</span>
                 </div>
             </div>
 
-            <h3 style="margin: 0 0 16px 5px; font-size: 18px;" class="stagger-item" style="animation-delay: 0.2s">ИНВЕНТАРЬ</h3>
+            <!-- Достижения -->
+            <h3 style="margin: 0 0 8px 5px; font-size: 15px; color: var(--success);" class="stagger-item">ДОСТИЖЕНИЯ</h3>
+            <div class="achievements-scroll stagger-item" id="achievements-container" style="animation-delay: 0.15s"></div>
+
+            <!-- Лидерборд -->
+            <h3 style="margin: 15px 0 8px 5px; font-size: 15px; color: var(--coin);" class="stagger-item">ТОП ИГРОКОВ</h3>
+            <div class="glass-panel stagger-item" id="leaderboard-container" style="padding: 5px 10px; margin-bottom: 24px; animation-delay: 0.2s"></div>
+
+            <!-- Инвентарь -->
+            <h3 style="margin: 0 0 16px 5px; font-size: 18px;" class="stagger-item" style="animation-delay: 0.25s">ИНВЕНТАРЬ</h3>
             <div class="inventory-grid" id="inventory">
                 <p id="empty-inv" style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 30px; font-family: var(--font-display); font-weight: 800; letter-spacing: 1px;">ИНВЕНТАРЬ ПУСТ</p>
             </div>
@@ -646,13 +654,14 @@
     <script>
         const preloaderStartTime = Date.now();
 
-        // Анимация фоновых частиц с мягкой сменой цвета и размеров
+        // Анимация фоновых частиц с мягкой сменой цвета и размеров (Уменьшено для телефонов)
         document.addEventListener("DOMContentLoaded", () => {
             const pContainer = document.getElementById('particles-container');
-            const particleCount = 45;
+            const isMobile = window.innerWidth < 768;
+            const particleCount = isMobile ? 15 : 25; // ОПТИМИЗАЦИЯ
             for(let i = 0; i < particleCount; i++) {
                 let p = document.createElement('div'); p.className = 'particle';
-                let isLarge = Math.random() > 0.85; // 15% крупных частиц
+                let isLarge = Math.random() > 0.85; 
                 let size = isLarge ? (Math.random() * 4 + 6) : (Math.random() * 3 + 1.5);
                 p.style.width = size + 'px'; p.style.height = size + 'px';
                 p.style.left = Math.random() * 100 + 'vw';
@@ -697,9 +706,14 @@
         let balance = 15000; let inventoryItems = []; let wonItemsArray = []; 
         let energy = 100; const maxEnergy = 100; let referralsCount = 0; let taskSubState = 'start'; 
         let casesOpened = 0; let lastEnergyUpdate = Date.now(); let dailyBonus = 0; let tutorialCompleted = false;
+        
+        // Новые переменные для бонусов
+        let totalClicks = 0;
+        let upgradesCount = 0;
+        let unlockedAchievements = [];
 
         function saveState() {
-            const state = { balance, inventory: inventoryItems, energy, referrals: referralsCount, taskSub: taskSubState, casesOpened, lastEnergyUpdate, dailyBonus, tutorialCompleted };
+            const state = { balance, inventory: inventoryItems, energy, referrals: referralsCount, taskSub: taskSubState, casesOpened, lastEnergyUpdate, dailyBonus, tutorialCompleted, totalClicks, upgradesCount, unlockedAchievements };
             localStorage.setItem('oxideDropState', JSON.stringify(state));
         }
 
@@ -713,6 +727,9 @@
                     taskSubState = state.taskSub || 'start'; casesOpened = state.casesOpened || 0;
                     lastEnergyUpdate = state.lastEnergyUpdate || Date.now(); dailyBonus = state.dailyBonus || 0;
                     tutorialCompleted = state.tutorialCompleted || false;
+                    totalClicks = state.totalClicks || 0;
+                    upgradesCount = state.upgradesCount || 0;
+                    unlockedAchievements = state.unlockedAchievements || [];
                 } catch(e) {}
             }
             const now = Date.now();
@@ -723,12 +740,70 @@
             saveState();
         }
 
+        // --- ДОСТИЖЕНИЯ И ЛИДЕРБОРД ---
+        const achievementsData = [
+            { id: 'first_blood', name: 'КЛИКЕР', desc: 'Сделать 100 кликов', icon: '🖱️', condition: () => totalClicks >= 100 },
+            { id: 'case_opener', name: 'МАНЬЯК', desc: 'Открыть 10 кейсов', icon: '📦', condition: () => casesOpened >= 10 },
+            { id: 'upgrade_master', name: 'МАСТЕР', desc: 'Сделать 3 апгрейда', icon: '🔨', condition: () => upgradesCount >= 3 },
+            { id: 'rich_boy', name: 'БОГАЧ', desc: 'Накопить 20k монет', icon: '💰', condition: () => balance >= 20000 }
+        ];
+
+        const baseBots = [
+            {name: 'CyberKing', bal: 50000}, {name: 'ShadowDrop', bal: 32000},
+            {name: 'OxidePro', bal: 18500}, {name: 'GambleGod', bal: 9400},
+            {name: 'LuckyGuy', bal: 4300}, {name: 'Newbie2023', bal: 1200}
+        ];
+
+        function checkAchievements() {
+            let newlyUnlocked = false;
+            achievementsData.forEach(ach => {
+                if (!unlockedAchievements.includes(ach.id) && ach.condition()) {
+                    unlockedAchievements.push(ach.id);
+                    newlyUnlocked = true;
+                    showNotification(`🏆 Достижение: ${ach.name}!`, 'success');
+                    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                }
+            });
+            if (newlyUnlocked) { saveState(); renderAchievements(); }
+        }
+
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            container.innerHTML = achievementsData.map(ach => {
+                const isUnlocked = unlockedAchievements.includes(ach.id);
+                return `<div class="achievement-card ${isUnlocked ? 'unlocked' : ''}">
+                            <div class="ach-icon">${ach.icon}</div>
+                            <div class="ach-name">${ach.name}</div>
+                            <div class="ach-desc">${ach.desc}</div>
+                        </div>`;
+            }).join('');
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            const myName = (window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name) || 'Вы';
+            let allPlayers = [...baseBots, {name: myName, bal: balance, isMe: true}];
+            allPlayers.sort((a, b) => b.bal - a.bal);
+            
+            let html = '';
+            allPlayers.slice(0, 6).forEach((p, i) => {
+                let rankStr = i + 1;
+                if(i === 0) rankStr = '🥇'; else if(i === 1) rankStr = '🥈'; else if(i === 2) rankStr = '🥉';
+                html += `<div class="lb-row ${p.isMe ? 'is-me' : ''}">
+                            <div class="lb-rank">${rankStr}</div>
+                            <div class="lb-name">${p.name}</div>
+                            <div class="lb-score">${p.bal} <img src="Money/монеты.png" class="coin-icon"></div>
+                         </div>`;
+            });
+            container.innerHTML = html;
+        }
+
         // --- 2. ПРЕЛОАДЕР ---
         document.addEventListener("DOMContentLoaded", () => {
             loadState(); 
             const criticalImages = ['https://playoxide.com/media/oxide-brand.png', 'Clicer/кликер.png', 'DonatCase/кейс.png', 'GunCase/оружейный кейс.png', 'Money/монеты.png'];
             let loadedCount = 0; const totalImages = criticalImages.length;
-            const progressFill = document.getElementById('preloader-fill'); const progressText = document.getElementById('preloader-text'); const preloader = document.getElementById('preloader');
+            const progressText = document.getElementById('preloader-text'); const preloader = document.getElementById('preloader');
 
             function finishPreloader() {
                 const elapsed = Date.now() - preloaderStartTime; const minTime = 1000; const delay = elapsed < minTime ? minTime - elapsed : 0;
@@ -736,6 +811,7 @@
                     preloader.style.opacity = '0'; preloader.style.visibility = 'hidden';
                     setTimeout(() => { preloader.style.display = 'none'; }, 800);
                     updateBalanceUI(0); updateEnergyUI(); renderInventory(); renderTaskSub(); renderDailyBonus();
+                    renderAchievements(); renderLeaderboard();
                     document.getElementById('ref-count').innerText = referralsCount;
                     document.getElementById('cases-opened-count').innerText = casesOpened;
                     if (!tutorialCompleted) setTimeout(startInteractiveTutorial, 500);
@@ -748,7 +824,7 @@
             });
             function updateProgress() {
                 loadedCount++; const percent = Math.round((loadedCount / totalImages) * 100);
-                progressFill.style.width = percent + '%'; progressText.innerText = percent + '%';
+                progressText.innerText = percent + '%';
                 if (loadedCount === totalImages) finishPreloader(); 
             }
         });
@@ -760,7 +836,7 @@
             { text: "🎯 Это КЕЙСЫ. Нажимай на них, чтобы получить предметы. Стоимость кейсов указана на кнопке.", target: "tut-case", tabIdx: 0 },
             { text: "🖱️ Это КЛИКЕР. Нажимай на картинку, чтобы зарабатывать монеты. Следи за энергией!", target: "main-clicker", tabIdx: 1 },
             { text: "🎁 Здесь ЗАДАНИЯ. Забирай ежедневный бонус и выполняй квесты!", target: "tut-task-panel", tabIdx: 2 },
-            { text: "👤 В ПРОФИЛЕ твой инвентарь, статистика и реферальная ссылка. Приглашай друзей!", target: "tut-profile-panel", tabIdx: 3 }
+            { text: "👤 В ПРОФИЛЕ твой инвентарь (там можно делать АПГРЕЙД), статистика и ТОП игроков!", target: "tut-profile-panel", tabIdx: 3 }
         ];
 
         function startInteractiveTutorial() {
@@ -807,7 +883,7 @@
             if (now - dailyBonus >= 86400000) {
                 updateBalanceUI(300); dailyBonus = now; saveState(); renderDailyBonus();
                 showNotification('Ежедневный бонус +300 монет!', 'success');
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
             }
         }
 
@@ -849,6 +925,7 @@
         }
 
         const balanceBox = document.getElementById('global-balance');
+        let updateTimeout;
         function updateBalanceUI(change = 0) {
             balance += change; saveState();
             const balVal = document.getElementById('balance-val'); if (balVal) balVal.innerText = balance;
@@ -857,13 +934,20 @@
                 balanceBox.style.transform = change > 0 ? 'scale(1.15)' : 'scale(0.9)'; balanceBox.style.borderColor = change > 0 ? 'var(--success)' : 'var(--danger)';
                 setTimeout(() => { balanceBox.style.transform = 'scale(1)'; balanceBox.style.borderColor = 'rgba(255, 204, 0, 0.3)'; }, 300);
             }
+            
+            // Проверка ачивок и обновление топа с задержкой, чтобы не лагало
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                checkAchievements();
+                if(document.getElementById('profile-sec').classList.contains('active')) renderLeaderboard();
+            }, 500);
         }
 
         // --- 6. МЯГКОЕ АУДИО (WEB AUDIO API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let bgAtmosStarted = false;
 
-        function startBgAtmos() { // Тёплый киберпанк-гул
+        function startBgAtmos() { // Тёплый гул
             if(bgAtmosStarted || audioCtx.state === 'suspended') return;
             bgAtmosStarted = true;
             const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator();
@@ -879,38 +963,30 @@
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); const filter = audioCtx.createBiquadFilter();
             osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.04);
             filter.type = 'lowpass'; filter.frequency.value = 800;
-            gain.gain.setValueAtTime(0.15, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
             osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.04);
         }
 
-        function playMechanicalUnlock() { // Механический звук перед бумом
+        function playMechanicalUnlock() { // ГЛУБОКИЙ КИНЕМАТОГРАФИЧНЫЙ БУМ
             if (audioCtx.state === 'suspended') return;
             const now = audioCtx.currentTime;
             
-            // Шум механизма
+            // Мягкий гул открытия
             const oscNoise = audioCtx.createOscillator(); const gainNoise = audioCtx.createGain();
-            oscNoise.type = 'sawtooth'; oscNoise.frequency.setValueAtTime(50, now); oscNoise.frequency.linearRampToValueAtTime(10, now + 0.3);
-            gainNoise.gain.setValueAtTime(0, now); gainNoise.gain.linearRampToValueAtTime(0.1, now + 0.1); gainNoise.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            oscNoise.type = 'sine'; oscNoise.frequency.setValueAtTime(200, now); oscNoise.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+            gainNoise.gain.setValueAtTime(0, now); gainNoise.gain.linearRampToValueAtTime(0.2, now + 0.1); gainNoise.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
             oscNoise.connect(gainNoise); gainNoise.connect(audioCtx.destination); oscNoise.start(now); oscNoise.stop(now + 0.3);
 
-            // Глубокий БУМ (вместо взрыва)
+            // Глубокий БУМ
             const oscBoom = audioCtx.createOscillator(); const gainBoom = audioCtx.createGain();
-            oscBoom.type = 'sine'; oscBoom.frequency.setValueAtTime(120, now + 0.1); oscBoom.frequency.exponentialRampToValueAtTime(20, now + 0.7);
-            gainBoom.gain.setValueAtTime(0, now + 0.1); gainBoom.gain.linearRampToValueAtTime(0.6, now + 0.15); gainBoom.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-            oscBoom.connect(gainBoom); gainBoom.connect(audioCtx.destination); oscBoom.start(now + 0.1); oscBoom.stop(now + 0.9);
-
-            // Металлический звон
-            const oscRing = audioCtx.createOscillator(); const gainRing = audioCtx.createGain();
-            oscRing.type = 'sine'; oscRing.frequency.setValueAtTime(800, now + 0.15); oscRing.frequency.exponentialRampToValueAtTime(400, now + 0.8);
-            gainRing.gain.setValueAtTime(0, now + 0.15); gainRing.gain.linearRampToValueAtTime(0.05, now + 0.2); gainRing.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-            oscRing.connect(gainRing); gainRing.connect(audioCtx.destination); oscRing.start(now + 0.15); oscRing.stop(now + 0.9);
+            oscBoom.type = 'sine'; oscBoom.frequency.setValueAtTime(80, now + 0.1); oscBoom.frequency.exponentialRampToValueAtTime(20, now + 0.8);
+            gainBoom.gain.setValueAtTime(0, now + 0.1); gainBoom.gain.linearRampToValueAtTime(0.8, now + 0.15); gainBoom.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+            oscBoom.connect(gainBoom); gainBoom.connect(audioCtx.destination); oscBoom.start(now + 0.1); oscBoom.stop(now + 1.0);
         }
 
         function playWinDrop(isRare) { 
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const now = audioCtx.currentTime;
-            
-            // Базовый радостный аккорд
             const notes = [523.25, 659.25, 783.99]; 
             notes.forEach((freq, i) => {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -921,7 +997,6 @@
             });
 
             if (isRare) {
-                // Золотые высокие переливы
                 const rareNotes = [1046.50, 1318.51, 1567.98, 2093.00];
                 rareNotes.forEach((freq, i) => {
                     const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -997,10 +1072,9 @@
             e.preventDefault();
             if (energy <= 0) { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); return; }
             
-            // Вдавливание (переопределяем анимацию)
             clickerImg.classList.add('click-active'); setTimeout(() => clickerImg.classList.remove('click-active'), 100);
             
-            energy--; updateEnergyUI(); updateBalanceUI(1); saveState(); 
+            energy--; totalClicks++; updateEnergyUI(); updateBalanceUI(1); 
             playSoftClick(); if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 
             const floatEl = document.createElement('div'); floatEl.classList.add('floating-number'); floatEl.innerText = '+1';
@@ -1093,7 +1167,7 @@
             staggerItems.forEach(item => { item.style.animation = 'none'; void item.offsetWidth; item.style.animation = null; });
 
             if (tabId === 'main-sec') closeRouletteView();
-            if (tabId === 'profile-sec') renderInventory();
+            if (tabId === 'profile-sec') { renderInventory(); renderLeaderboard(); renderAchievements(); }
         }
 
         function getRandomItem(pool) {
@@ -1121,15 +1195,12 @@
 
             updateBalanceUI(-totalPrice); isSpinning = true; setButtonsState(true);
             
-            // ВСПЫШКА ВОЛНОЙ И ТРЯСКА С МЯГКИМ ЗВУКОМ
+            // МЯГКАЯ ВСПЫШКА
             const flash = document.getElementById('screen-flash');
-            flash.style.background = `radial-gradient(circle at center, ${currentCase.theme} 0%, transparent 60%)`;
-            flash.style.transition = 'none'; flash.style.opacity = '0.4'; flash.style.transform = 'scale(0.8)';
+            flash.style.background = `radial-gradient(circle at center, ${currentCase.theme} 0%, transparent 70%)`;
+            flash.style.transition = 'none'; flash.style.opacity = '0.2'; flash.style.transform = 'scale(0.8)';
             void flash.offsetWidth; 
             flash.style.transition = 'all 0.6s ease-out'; flash.style.opacity = '0'; flash.style.transform = 'scale(2.5)';
-            
-            document.body.classList.add('shake-anim');
-            setTimeout(() => { document.body.classList.remove('shake-anim'); }, 400);
 
             playMechanicalUnlock();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
@@ -1188,6 +1259,7 @@
                     tg.HapticFeedback.notificationOccurred('success');
                 }
             }
+            checkAchievements();
             if (count === 1) showWinModalSingle(wonItemsArray[0]); else showWinModalMulti(wonItemsArray, totalValue);
         }
 
@@ -1269,7 +1341,11 @@
         function openUpgradeModal(index) {
             currentUpgradeSourceIndex = index; const sourceItem = inventoryItems[index];
             let validTargets = [];
-            for (const key in allItems) { const item = allItems[key]; if (!item.isCurrency && item.price > sourceItem.price) { validTargets.push({ key, item }); } }
+            // Динамический подхват всех новых предметов из базы (кроме монет)
+            for (const key in allItems) { 
+                const item = allItems[key]; 
+                if (!item.isCurrency && item.price > sourceItem.price) { validTargets.push({ key, item }); } 
+            }
             validTargets.sort((a, b) => a.item.price - b.item.price);
             
             const grid = document.getElementById('upgrade-targets-grid');
@@ -1277,8 +1353,8 @@
                 grid.innerHTML = '<div style="color:var(--text-muted); grid-column: 1/-1; text-align: center; font-size: 12px; padding: 20px;">Нет предметов дороже вашего. Вы достигли максимума!</div>';
             } else {
                 grid.innerHTML = validTargets.map(t => {
-                    const visual = t.item.img ? `<img src="${t.item.img}" loading="lazy" style="width:50px;height:50px; object-fit:contain; margin-bottom:5px;">` : `<div style="font-size:30px;">${t.item.icon}</div>`;
-                    return `<div class="upgrade-target-card" id="upgrade-target-${t.key}" onclick="selectUpgradeTarget('${t.key}', ${sourceItem.price})">${visual}<div style="font-size: 11px; font-family: var(--font-display); font-weight: 800; color: ${t.item.color}; text-align: center;">${t.item.name}</div><div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">${t.item.price} <img src="Money/монеты.png" style="width:10px;height:10px;vertical-align:-1px;"></div></div>`;
+                    const visual = t.item.img ? `<img src="${t.item.img}" loading="lazy" style="width:40px;height:40px; object-fit:contain; margin-bottom:5px;">` : `<div style="font-size:30px;">${t.item.icon}</div>`;
+                    return `<div class="upgrade-target-card" id="upgrade-target-${t.key}" onclick="selectUpgradeTarget('${t.key}', ${sourceItem.price})">${visual}<div style="font-size: 10px; font-family: var(--font-display); font-weight: 800; color: ${t.item.color}; text-align: center;">${t.item.name}</div><div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">${t.item.price} <img src="Money/монеты.png" style="width:10px;height:10px;vertical-align:-1px;"></div></div>`;
                 }).join('');
             }
             document.getElementById('upgrade-modal').classList.add('show'); document.getElementById('upgrade-selection-section').style.display = 'block'; document.getElementById('upgrade-wheel-section').style.display = 'none'; document.getElementById('upgrade-result-section').style.display = 'none';
@@ -1287,6 +1363,7 @@
 
         function selectUpgradeTarget(targetKey, sourcePrice) {
             document.querySelectorAll('.upgrade-target-card').forEach(el => el.classList.remove('selected')); document.getElementById(`upgrade-target-${targetKey}`).classList.add('selected'); currentUpgradeTargetKey = targetKey; updateUpgradeButtonUI(sourcePrice);
+            if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
         }
 
         function updateUpgradeButtonUI(sourcePrice) {
@@ -1354,7 +1431,8 @@
                 playGambleResult(false);
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             }
-            saveState(); renderInventory(); showUpgradeResult(isWin, targetItem);
+            upgradesCount++;
+            saveState(); renderInventory(); showUpgradeResult(isWin, targetItem); checkAchievements();
         }
 
         function showUpgradeResult(isWin, item) {
